@@ -1,0 +1,218 @@
+@{
+    ViewData["Title"] = "Học Từ Vựng";
+    Layout = "_Layout";
+}
+
+<div class="container" style="padding-top: 100px;">
+    <div class="text-center mb-4">
+        <h1 class="text-gradient">📚 Học Từ Vựng</h1>
+        <p style="color: var(--text-secondary);">Học từ mới theo chủ đề hoặc tải danh sách từ file</p>
+    </div>
+
+    <!-- Settings -->
+    <div class="glass-panel text-center" style="padding: var(--space-lg); margin-bottom: var(--space-xl);">
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; align-items: center;">
+            <select id="languageSelect" class="input-field" style="width: auto;">
+                <option value="ko">🇰🇷 Tiếng Hàn</option>
+                <option value="zh">🇨🇳 Tiếng Trung</option>
+                <option value="en">🇺🇸 Tiếng Anh</option>
+            </select>
+            <select id="themeSelect" class="input-field" style="width: auto;">
+                <option value="greetings">👋 Chào hỏi</option>
+                <option value="numbers">🔢 Số đếm</option>
+                <option value="food">🍕 Đồ ăn</option>
+                <option value="family">👨‍👩‍👧‍👦 Gia đình</option>
+                <option value="colors">🎨 Màu sắc</option>
+                <option value="animals">🐾 Động vật</option>
+                <option value="weather">🌤️ Thời tiết</option>
+                <option value="shopping">🛒 Mua sắm</option>
+                <option value="travel">🧳 Du lịch</option>
+                <option value="work">💼 Công việc</option>
+            </select>
+            <button class="btn btn-primary" onclick="loadVocabulary()">📚 Tải từ AI</button>
+        </div>
+        
+        <!-- File Upload Section -->
+        <div style="margin-top: var(--space-lg); padding-top: var(--space-lg); border-top: 1px solid var(--border-glass);">
+            <p style="color: var(--text-secondary); margin-bottom: var(--space-md);">📤 Hoặc tải danh sách từ file của bạn</p>
+            <div style="display: flex; gap: 1rem; justify-content: center; align-items: center; flex-wrap: wrap;">
+                <input type="file" id="fileInput" accept=".xlsx,.docx" style="display: none;" onchange="handleFileUpload(event)">
+                <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">
+                    📁 Chọn file Excel/Word
+                </button>
+                <span id="fileName" style="color: var(--text-muted); font-size: 0.9rem;"></span>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: var(--space-sm);">
+                Excel: Cột A=Từ, B=Nghĩa, C=Phát âm, D=Ví dụ | Word: Từ - Nghĩa (mỗi dòng)
+            </p>
+            <!-- Download Sample Files -->
+            <div style="margin-top: var(--space-md); display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                <a href="~/samples/vocabulary_template.xlsx" 
+                   class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.5rem 1rem;" download>
+                    📥 Tải file mẫu Excel
+                </a>
+                <a href="~/samples/vocabulary_template.docx" 
+                   class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.5rem 1rem;" download>
+                    📥 Tải file mẫu Word
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loadingArea" class="hidden text-center" style="padding: var(--space-3xl);">
+        <div class="spinner" style="margin: 0 auto var(--space-lg);"></div>
+        <p style="color: var(--text-muted);">Đang xử lý...</p>
+    </div>
+
+    <!-- Mode Selection (appears after loading vocabulary) -->
+    <div id="modeSelection" class="hidden text-center" style="margin-bottom: var(--space-xl);">
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <button class="btn btn-primary mode-btn active" data-mode="flashcard" onclick="switchMode('flashcard')">
+                🃏 Flashcard
+            </button>
+            <button class="btn btn-secondary mode-btn" data-mode="quiz" onclick="switchMode('quiz')">
+                🎤 Kiểm tra nói
+            </button>
+        </div>
+        <!-- Display Language for Quiz -->
+        <div id="quizDisplayLangSelector" class="hidden" style="margin-top: var(--space-lg);">
+            <label style="color: var(--text-secondary); margin-right: var(--space-sm);">Hiển thị nghĩa bằng:</label>
+            <select id="displayLanguageSelect" class="input-field" style="width: auto; display: inline-block;">
+                <option value="vi">🇻🇳 Tiếng Việt</option>
+                <option value="en">🇺🇸 Tiếng Anh</option>
+                <option value="zh">🇨🇳 Tiếng Trung</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Flashcard Area -->
+    <div id="flashcardArea" class="hidden text-center">
+        <!-- Source Badge -->
+        <div id="sourceBadge" style="margin-bottom: var(--space-md);">
+            <span class="lang-badge korean" id="sourceLabel">Từ AI</span>
+        </div>
+
+        <!-- Progress -->
+        <div style="margin-bottom: var(--space-xl);">
+            <span id="currentIndex" style="font-size: 1.5rem; font-weight: 600; color: var(--primary-light);">1</span>
+            <span style="color: var(--text-muted);"> / </span>
+            <span id="totalCount" style="font-size: 1.5rem; color: var(--text-muted);">10</span>
+        </div>
+
+        <!-- Flashcard -->
+        <div class="flashcard-container" style="width: 400px; height: 280px;">
+            <div class="flashcard" id="flashcard" onclick="flipCard()">
+                <div class="flashcard-face flashcard-front">
+                    <p class="flashcard-word" id="cardWord"></p>
+                    <p class="flashcard-pronunciation" id="cardPronunciation"></p>
+                </div>
+                <div class="flashcard-face flashcard-back">
+                    <p class="flashcard-meaning" id="cardMeaning"></p>
+                    <p class="flashcard-example" id="cardExample"></p>
+                </div>
+            </div>
+        </div>
+        <p style="color: var(--text-muted); margin-top: var(--space-md);">Nhấn vào thẻ để lật</p>
+
+        <!-- Navigation -->
+        <div style="display: flex; gap: 1rem; justify-content: center; margin-top: var(--space-xl);">
+            <button class="btn btn-secondary" onclick="prevCard()">⬅️ Trước</button>
+            <button class="btn btn-secondary" onclick="shuffleCards()">🔀 Trộn</button>
+            <button class="btn btn-primary" onclick="nextCard()">Tiếp ➡️</button>
+        </div>
+
+        <!-- Word List -->
+        <div class="card" style="margin-top: var(--space-2xl); text-align: left;">
+            <h3 class="mb-3">📋 Danh sách từ vựng (<span id="wordCount">0</span> từ)</h3>
+            <div id="wordList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-md);"></div>
+        </div>
+    </div>
+
+    <!-- Speaking Quiz Area -->
+    <div id="quizArea" class="hidden text-center">
+        <!-- Quiz Progress -->
+        <div style="margin-bottom: var(--space-lg);">
+            <span style="color: var(--text-secondary);">Câu hỏi</span>
+            <span id="quizCurrentIndex" style="font-size: 1.5rem; font-weight: 600; color: var(--primary-light);"> 1</span>
+            <span style="color: var(--text-muted);"> / </span>
+            <span id="quizTotalCount" style="font-size: 1.5rem; color: var(--text-muted);">10</span>
+        </div>
+
+        <!-- Timer -->
+        <div style="margin-bottom: var(--space-xl);">
+            <div id="timerDisplay" style="font-size: 3rem; font-weight: 700; color: var(--accent-gold);">10</div>
+            <div style="width: 200px; height: 8px; background: var(--bg-card); border-radius: 4px; margin: 0 auto; overflow: hidden;">
+                <div id="timerBar" style="width: 100%; height: 100%; background: var(--gradient-primary); transition: width 0.1s linear;"></div>
+            </div>
+        </div>
+
+        <!-- Quiz Card - Shows meaning -->
+        <div class="card" style="max-width: 500px; margin: 0 auto var(--space-xl); padding: var(--space-2xl);">
+            <p id="quizMeaningLabel" style="color: var(--text-muted); margin-bottom: var(--space-sm);">Nghĩa tiếng Việt:</p>
+            <p id="quizMeaning" style="font-size: 2rem; font-weight: 700; color: var(--primary-light);"></p>
+            <p id="quizHint" class="hidden" style="color: var(--text-muted); margin-top: var(--space-md); font-size: 0.9rem;"></p>
+        </div>
+
+        <!-- Recording Button -->
+        <div style="margin-bottom: var(--space-xl);">
+            <button id="quizRecordBtn" class="btn btn-primary btn-icon" style="width: 100px; height: 100px; font-size: 2.5rem;" onclick="startQuizRecording()">
+                🎤
+            </button>
+            <p id="quizRecordStatus" style="color: var(--text-muted); margin-top: var(--space-md);">Nhấn để trả lời</p>
+        </div>
+
+        <!-- User Answer -->
+        <div id="quizAnswerArea" class="hidden" style="margin-bottom: var(--space-xl);">
+            <p style="color: var(--text-secondary);">Bạn nói:</p>
+            <p id="quizUserAnswer" style="font-size: 1.5rem; font-weight: 600;"></p>
+        </div>
+
+        <!-- Result -->
+        <div id="quizResultArea" class="hidden">
+            <div id="quizResultIcon" style="font-size: 4rem; margin-bottom: var(--space-md);"></div>
+            <p id="quizResultText" style="font-size: 1.25rem; font-weight: 600;"></p>
+            <p id="quizCorrectAnswer" style="color: var(--text-muted); margin-top: var(--space-sm);"></p>
+            <button class="btn btn-primary mt-3" onclick="nextQuizQuestion()">Câu tiếp theo ➡️</button>
+        </div>
+
+        <!-- Quiz Controls -->
+        <div style="display: flex; gap: 1rem; justify-content: center; margin-top: var(--space-xl);">
+            <button class="btn btn-secondary" onclick="showHint()">💡 Gợi ý</button>
+            <button class="btn btn-secondary" onclick="skipQuestion()">⏭️ Bỏ qua</button>
+        </div>
+
+        <!-- Score Summary -->
+        <div id="quizScoreSummary" class="hidden card" style="margin-top: var(--space-2xl); padding: var(--space-xl);">
+            <h3 class="mb-3">📊 Kết quả</h3>
+            <div style="display: flex; justify-content: center; gap: var(--space-2xl);">
+                <div>
+                    <p style="font-size: 3rem; font-weight: 700; color: var(--accent-green);" id="correctCount">0</p>
+                    <p style="color: var(--text-muted);">Đúng</p>
+                </div>
+                <div>
+                    <p style="font-size: 3rem; font-weight: 700; color: var(--accent-pink);" id="wrongCount">0</p>
+                    <p style="color: var(--text-muted);">Sai</p>
+                </div>
+            </div>
+            <button class="btn btn-primary mt-3" onclick="restartQuiz()">🔄 Làm lại</button>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="card text-center" style="padding: var(--space-3xl);">
+        <p style="font-size: 3rem;">📚</p>
+        <p style="color: var(--text-muted);">Chọn chủ đề hoặc tải file để bắt đầu học</p>
+    </div>
+</div>
+
+<style>
+    .mode-btn.active {
+        background: var(--gradient-primary) !important;
+        color: white !important;
+    }
+</style>
+
+@section Scripts {
+<script src="~/js/vocabulary.js" asp-append-version="true"></script>
+}

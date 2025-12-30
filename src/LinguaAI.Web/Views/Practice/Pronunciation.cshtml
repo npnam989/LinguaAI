@@ -1,0 +1,63 @@
+@{
+    ViewData["Title"] = "Luyện Phát Âm";
+    Layout = "_Layout";
+}
+
+<div class="container" style="padding-top: 100px;">
+    <div class="text-center mb-4">
+        <h1 class="text-gradient">🎤 Luyện Phát Âm</h1>
+        <p style="color: var(--text-secondary);">Nói theo mẫu và nhận phản hồi từ AI</p>
+    </div>
+
+    <!-- Settings -->
+    <div class="glass-panel text-center" style="padding: var(--space-lg); margin-bottom: var(--space-xl);">
+        <select id="languageSelect" class="input-field" style="width: auto; display: inline-block;">
+            <option value="ko">🇰🇷 Tiếng Hàn</option>
+            <option value="zh">🇨🇳 Tiếng Trung</option>
+            <option value="en">🇺🇸 Tiếng Anh</option>
+        </select>
+        <button class="btn btn-secondary" onclick="loadNewPhrase()">🔄 Câu mới</button>
+    </div>
+
+    <!-- Practice Card -->
+    <div class="card text-center" style="max-width: 600px; margin: 0 auto;">
+        <div id="targetPhrase" style="margin-bottom: var(--space-xl);">
+            <p style="font-size: 2.5rem; font-weight: 700; color: var(--text-primary);" id="phraseText">안녕하세요</p>
+            <p style="font-size: 1.25rem; color: var(--text-secondary);" id="phraseRomanization">annyeonghaseyo</p>
+            <p style="color: var(--text-muted);" id="phraseMeaning">Xin chào</p>
+        </div>
+
+        <!-- Recording Controls -->
+        <div style="margin-bottom: var(--space-xl);">
+            <button id="recordBtn" class="btn btn-primary btn-icon" style="width: 80px; height: 80px; font-size: 2rem;" onclick="toggleRecording()">
+                🎤
+            </button>
+            <p id="recordStatus" style="color: var(--text-muted); margin-top: var(--space-md);">Nhấn để ghi âm</p>
+        </div>
+
+        <!-- Spoken Text -->
+        <div id="spokenArea" class="hidden" style="margin-bottom: var(--space-xl);">
+            <p style="color: var(--text-secondary);">Bạn đã nói:</p>
+            <p id="spokenText" style="font-size: 1.5rem; color: var(--primary-light);"></p>
+        </div>
+
+        <!-- Score Display -->
+        <div id="scoreArea" class="hidden">
+            <div class="score-circle" id="scoreCircle" style="--score: 0;">
+                <span id="scoreValue">0</span>
+            </div>
+            <p id="feedbackText" style="color: var(--text-secondary); max-width: 400px; margin: 0 auto;"></p>
+            <div id="corrections" style="margin-top: var(--space-lg);"></div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loadingArea" class="hidden text-center">
+            <div class="spinner" style="margin: var(--space-xl) auto;"></div>
+            <p style="color: var(--text-muted);">Đang phân tích...</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="~/js/pronunciation.js" asp-append-version="true"></script>
+}

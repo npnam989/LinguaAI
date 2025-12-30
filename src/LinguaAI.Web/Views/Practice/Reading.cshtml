@@ -1,0 +1,77 @@
+@{
+    ViewData["Title"] = "Luyện Đọc";
+    Layout = "_Layout";
+}
+
+<div class="container" style="padding-top: 100px;">
+    <div class="text-center mb-4">
+        <h1 class="text-gradient">📖 Luyện Đọc Hiểu</h1>
+        <p style="color: var(--text-secondary);">Đọc bài và trả lời câu hỏi</p>
+    </div>
+
+    <!-- Settings -->
+    <div class="glass-panel text-center" style="padding: var(--space-lg); margin-bottom: var(--space-xl);">
+        <select id="languageSelect" class="input-field" style="width: auto; display: inline-block;">
+            <option value="ko">🇰🇷 Tiếng Hàn</option>
+            <option value="zh">🇨🇳 Tiếng Trung</option>
+            <option value="en">🇺🇸 Tiếng Anh</option>
+        </select>
+        <select id="levelSelect" class="input-field" style="width: auto; display: inline-block;">
+            <option value="beginner">Sơ cấp</option>
+            <option value="intermediate" selected>Trung cấp</option>
+            <option value="advanced">Cao cấp</option>
+        </select>
+        <select id="topicSelect" class="input-field" style="width: auto; display: inline-block;">
+            <option value="">🎲 Chủ đề ngẫu nhiên</option>
+            <option value="culture">🏛️ Văn hóa</option>
+            <option value="food">🍜 Ẩm thực</option>
+            <option value="travel">✈️ Du lịch</option>
+            <option value="technology">💻 Công nghệ</option>
+            <option value="nature">🌿 Thiên nhiên</option>
+        </select>
+        <button class="btn btn-primary" onclick="generateReading()">📄 Tạo bài đọc</button>
+    </div>
+
+    <!-- Loading -->
+    <div id="loadingArea" class="hidden text-center" style="padding: var(--space-3xl);">
+        <div class="spinner" style="margin: 0 auto var(--space-lg);"></div>
+        <p style="color: var(--text-muted);">Đang tạo bài đọc...</p>
+    </div>
+
+    <!-- Content Area -->
+    <div id="contentArea" class="hidden">
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-xl);">
+            <!-- Reading Content -->
+            <div class="card">
+                <h2 id="readingTitle" style="margin-bottom: var(--space-lg);"></h2>
+                <div id="readingContent" style="font-size: 1.1rem; line-height: 1.8; color: var(--text-secondary);"></div>
+            </div>
+
+            <!-- Vocabulary -->
+            <div>
+                <div class="card" style="margin-bottom: var(--space-xl);">
+                    <h3 class="mb-3">📚 Từ vựng</h3>
+                    <div id="vocabularyList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quiz -->
+        <div class="card" style="margin-top: var(--space-xl);">
+            <h3 class="mb-3">❓ Câu hỏi đọc hiểu</h3>
+            <div id="quizArea"></div>
+            <button id="checkAnswersBtn" class="btn btn-primary mt-3 hidden" onclick="checkAnswers()">Kiểm tra đáp án</button>
+            <div id="quizResult" class="hidden" style="margin-top: var(--space-lg);"></div>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="card text-center" style="padding: var(--space-3xl);">
+        <p style="font-size: 3rem;">📖</p>
+        <p style="color: var(--text-muted);">Chọn ngôn ngữ và nhấn "Tạo bài đọc" để bắt đầu</p>
+    </div>
+</div>
+
+@section Scripts {
+<script src="~/js/reading.js" asp-append-version="true"></script>
+}

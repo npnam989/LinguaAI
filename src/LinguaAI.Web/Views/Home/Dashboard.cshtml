@@ -1,0 +1,74 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "_Layout";
+}
+
+<div class="container" style="padding-top: 100px;">
+    <h1 class="text-center text-gradient mb-4">Chọn Ngôn Ngữ & Chế Độ</h1>
+    
+    <!-- Language Selection -->
+    <div class="text-center mb-4">
+        <h3 class="mb-3" style="color: var(--text-secondary);">Ngôn ngữ học</h3>
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <button class="btn btn-secondary lang-select" data-lang="ko" onclick="selectLanguage('ko')">
+                🇰🇷 Tiếng Hàn
+            </button>
+            <button class="btn btn-secondary lang-select" data-lang="zh" onclick="selectLanguage('zh')">
+                🇨🇳 Tiếng Trung
+            </button>
+            <button class="btn btn-secondary lang-select" data-lang="en" onclick="selectLanguage('en')">
+                🇺🇸 Tiếng Anh
+            </button>
+        </div>
+    </div>
+
+    <!-- Mode Selection -->
+    <div class="modes-grid">
+        <a href="/Practice/Conversation" class="card mode-card">
+            <div class="icon">💬</div>
+            <h3>Giao Tiếp</h3>
+            <p>Trò chuyện AI với kịch bản thực tế</p>
+        </a>
+        <a href="/Practice/Pronunciation" class="card mode-card">
+            <div class="icon">🎤</div>
+            <h3>Phát Âm</h3>
+            <p>Luyện nói và nhận phản hồi</p>
+        </a>
+        <a href="/Practice/Writing" class="card mode-card">
+            <div class="icon">✍️</div>
+            <h3>Viết</h3>
+            <p>Chấm điểm và sửa lỗi văn bản</p>
+        </a>
+        <a href="/Practice/Reading" class="card mode-card">
+            <div class="icon">📖</div>
+            <h3>Đọc Hiểu</h3>
+            <p>Đọc bài và trả lời câu hỏi</p>
+        </a>
+        <a href="/Practice/Vocabulary" class="card mode-card">
+            <div class="icon">📚</div>
+            <h3>Từ Vựng</h3>
+            <p>Học từ mới theo chủ đề</p>
+        </a>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Load saved language
+    const savedLang = localStorage.getItem('selectedLanguage') || 'ko';
+    selectLanguage(savedLang);
+
+    function selectLanguage(lang) {
+        localStorage.setItem('selectedLanguage', lang);
+        document.querySelectorAll('.lang-select').forEach(btn => {
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-secondary');
+        });
+        const activeBtn = document.querySelector(`[data-lang="${lang}"]`);
+        if (activeBtn) {
+            activeBtn.classList.remove('btn-secondary');
+            activeBtn.classList.add('btn-primary');
+        }
+    }
+</script>
+}

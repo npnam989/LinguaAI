@@ -1,0 +1,43 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="LinguaAI - Học tiếng Hàn, tiếng Trung, tiếng Anh với AI" />
+    <title>@ViewData["Title"] - LinguaAI</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container navbar-content">
+            <a href="/" class="navbar-brand">🌐 LinguaAI</a>
+            <ul class="navbar-nav">
+                <li><a asp-controller="Home" asp-action="Dashboard">Dashboard</a></li>
+                <li><a asp-controller="Practice" asp-action="Conversation">Hội thoại</a></li>
+                <li><a asp-controller="Practice" asp-action="Vocabulary">Từ vựng</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+        @RenderBody()
+    </main>
+
+    <!-- Scripts -->
+    <script>
+        window.API_BASE_URL = '@(ViewBag.ApiBaseUrl ?? "http://localhost:5000")';
+    </script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

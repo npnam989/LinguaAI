@@ -1,0 +1,96 @@
+using LinguaAI.Api.Services;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+
+// Swagger - only in Development
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddSwaggerGen(c =>
+    {
+        c.SwaggerDoc("v1", new() { Title = "LinguaAI API", Version = "v1" });
+    });
+}
+
+// Register services
+builder.Services.AddSingleton<IGeminiService, GeminiService>();
+builder.Services.AddSingleton<IFileParserService, FileParserService>();
+
+// Rate Limiting - protect against abuse
+builder.Services.AddRateLimiter(options =>
+{
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+            factory: partition => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 30, // 30 requests per window
+                Window = TimeSpan.FromMinutes(1)
+            }));
+    
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
+
+// CORS - configurable via environment
+var allowedOrigins = builder.Configuration["Cors:AllowedOrigins"]?.Split(',') 
+    ?? new[] { "http://localhost:5262", "https://localhost:5262" };
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowWeb", policy =>
+    {
+        if (builder.Environment.IsDevelopment())
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+        else
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+    });
+});
+
+var app = builder.Build();
+
+// Security headers
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
+    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    await next();
+});
+
+// Configure the HTTP request pipeline
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "LinguaAI API v1");
+        c.RoutePrefix = string.Empty;
+    });
+}
+
+// HTTPS redirection in production
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
+app.UseRateLimiter();
+app.UseCors("AllowWeb");
+app.MapControllers();
+
+app.Run();

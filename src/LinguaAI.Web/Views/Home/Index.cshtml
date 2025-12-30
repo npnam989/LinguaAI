@@ -1,0 +1,73 @@
+﻿@{
+    ViewData["Title"] = "Học ngôn ngữ với AI";
+    Layout = "_Layout";
+}
+
+<section class="hero">
+    <div class="hero-content">
+        <h1 class="hero-title">Học Ngoại Ngữ Thông Minh</h1>
+        <p class="hero-subtitle">
+            Luyện nói <span class="lang-badge korean">🇰🇷 Tiếng Hàn</span>
+            <span class="lang-badge chinese">🇨🇳 Tiếng Trung</span>
+            <span class="lang-badge english">🇺🇸 Tiếng Anh</span>
+            cùng AI Gemini
+        </p>
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <a href="/Home/Dashboard" class="btn btn-primary">🚀 Bắt đầu ngay</a>
+            <a href="#features" class="btn btn-secondary">Tìm hiểu thêm</a>
+        </div>
+    </div>
+</section>
+
+<section id="features" class="section">
+    <div class="container">
+        <h2 class="text-center mb-4 text-gradient">Các Chế Độ Luyện Tập</h2>
+        <div class="modes-grid">
+            <div class="card mode-card" onclick="location.href='/Practice/Conversation'">
+                <div class="icon">💬</div>
+                <h3>Giao Tiếp</h3>
+                <p>Trò chuyện với AI trong các tình huống thực tế</p>
+            </div>
+            <div class="card mode-card" onclick="location.href='/Practice/Pronunciation'">
+                <div class="icon">🎤</div>
+                <h3>Phát Âm</h3>
+                <p>Luyện phát âm chuẩn với phản hồi tức thời</p>
+            </div>
+            <div class="card mode-card" onclick="location.href='/Practice/Writing'">
+                <div class="icon">✍️</div>
+                <h3>Viết</h3>
+                <p>Cải thiện kỹ năng viết với AI chấm bài</p>
+            </div>
+            <div class="card mode-card" onclick="location.href='/Practice/Reading'">
+                <div class="icon">📖</div>
+                <h3>Đọc Hiểu</h3>
+                <p>Đọc truyện và trả lời câu hỏi</p>
+            </div>
+            <div class="card mode-card" onclick="location.href='/Practice/Vocabulary'">
+                <div class="icon">📚</div>
+                <h3>Từ Vựng</h3>
+                <p>Học từ mới theo chủ đề với flashcard</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section" style="background: var(--bg-card);">
+    <div class="container text-center">
+        <h2 class="text-gradient mb-3">Tại sao chọn LinguaAI?</h2>
+        <div class="modes-grid">
+            <div class="card card-glass">
+                <h3>🤖 AI Thông Minh</h3>
+                <p>Powered by Google Gemini - AI tiên tiến nhất</p>
+            </div>
+            <div class="card card-glass">
+                <h3>🎯 Cá Nhân Hóa</h3>
+                <p>AI điều chỉnh theo trình độ của bạn</p>
+            </div>
+            <div class="card card-glass">
+                <h3>🌏 Đa Ngôn Ngữ</h3>
+                <p>Hàn, Trung, Anh - một nền tảng</p>
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,57 @@
+@{
+    ViewData["Title"] = "Luyện Giao Tiếp";
+    Layout = "_Layout";
+}
+
+<div class="container" style="padding-top: 100px; padding-bottom: 20px;">
+    <!-- Header -->
+    <div class="text-center mb-4">
+        <h1 class="text-gradient">💬 Luyện Giao Tiếp</h1>
+        <p style="color: var(--text-secondary);">Trò chuyện với AI trong các tình huống thực tế</p>
+    </div>
+
+    <!-- Settings -->
+    <div class="glass-panel" style="padding: var(--space-lg); margin-bottom: var(--space-lg);">
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+            <div>
+                <label style="color: var(--text-secondary); font-size: 0.875rem;">Ngôn ngữ</label>
+                <select id="languageSelect" class="input-field" style="width: auto;">
+                    <option value="ko">🇰🇷 Tiếng Hàn</option>
+                    <option value="zh">🇨🇳 Tiếng Trung</option>
+                    <option value="en">🇺🇸 Tiếng Anh</option>
+                </select>
+            </div>
+            <div>
+                <label style="color: var(--text-secondary); font-size: 0.875rem;">Kịch bản</label>
+                <select id="scenarioSelect" class="input-field" style="width: auto;">
+                    <option value="coffee">☕ Quán cà phê</option>
+                    <option value="restaurant">🍽️ Nhà hàng</option>
+                    <option value="shopping">🛍️ Mua sắm</option>
+                    <option value="travel">✈️ Du lịch</option>
+                    <option value="work">💼 Công việc</option>
+                    <option value="daily">🏠 Đời thường</option>
+                    <option value="interview">🎯 Phỏng vấn</option>
+                </select>
+            </div>
+            <button class="btn btn-secondary" onclick="startNewConversation()">🔄 Cuộc hội thoại mới</button>
+        </div>
+    </div>
+
+    <!-- Chat Area -->
+    <div class="chat-container" style="height: 60vh;">
+        <div id="chatMessages" class="chat-messages glass-panel">
+            <div class="message assistant">
+                <p>Xin chào! Hãy chọn ngôn ngữ và kịch bản, sau đó bắt đầu trò chuyện nhé! 👋</p>
+            </div>
+        </div>
+        
+        <div class="chat-input-area">
+            <input type="text" id="messageInput" class="input-field" placeholder="Nhập tin nhắn..." onkeypress="handleKeyPress(event)">
+            <button class="btn btn-primary" onclick="sendMessage()">Gửi</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="~/js/conversation.js" asp-append-version="true"></script>
+}

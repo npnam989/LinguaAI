@@ -1,0 +1,33 @@
+# Dependencies
+bin/
+obj/
+.nuget/
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+.idea/
+
+# Build
+publish/
+out/
+
+# Logs
+*.log
+
+# Secrets - NEVER COMMIT THESE
+appsettings.Development.json
+appsettings.*.json
+!appsettings.json
+
+# Docker
+docker-compose.override.yml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tools
+tools/SampleGenerator/
