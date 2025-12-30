@@ -29,4 +29,9 @@ public partial class DashboardPage : Page
     {
         NavigationService?.Navigate(new Pages.ReadingPage());
     }
+
+    private void WritingButton_Click(object sender, RoutedEventArgs e)
+    {
+        NavigationService?.Navigate(new Pages.WritingPage());
+    }
 }

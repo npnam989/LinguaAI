@@ -111,4 +111,22 @@ public class LinguaApiService
             return null;
         }
     }
+
+    public async Task<WritingResponse?> CheckWritingAsync(string language, string text, string level)
+    {
+        try
+        {
+            var request = new WritingRequest { Language = language, Text = text, Level = level };
+            var response = await _httpClient.PostAsJsonAsync("/api/writing/check", request);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<WritingResponse>();
+            }
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
 }

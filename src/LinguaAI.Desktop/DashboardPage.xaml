@@ -11,6 +11,7 @@
             <Button Content="📚 Luyện Từ Vựng" Padding="15,10" FontSize="16" Background="#2563eb" Foreground="White" Margin="0,10,0,0" Click="VocabularyButton_Click" />
             <Button Content="💬 Luyện Hội Thoại" Padding="15,10" FontSize="16" Background="#2563eb" Foreground="White" Margin="0,10,0,0" Click="ConversationButton_Click" />
             <Button Content="📖 Luyện Đọc (Reading)" Padding="15,10" FontSize="16" Background="#2563eb" Foreground="White" Margin="0,10,0,0" Click="ReadingButton_Click" />
+            <Button Content="✍️ Luyện Viết (Writing)" Padding="15,10" FontSize="16" Background="#2563eb" Foreground="White" Margin="0,10,0,0" Click="WritingButton_Click" />
         </StackPanel>
     </Grid>
 </Page>
