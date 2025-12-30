@@ -45,7 +45,7 @@ async function loadNewPhrase() {
     const language = document.getElementById('languageSelect').value;
 
     try {
-        const response = await fetch(`${window.API_BASE_URL}/api/pronunciation/phrases/${language}`);
+        const response = await fetch(`/Practice/GetPhrases?language=${language}`);
         currentPhrases = await response.json();
         currentPhraseIndex = Math.floor(Math.random() * currentPhrases.length);
         displayCurrentPhrase();
@@ -110,7 +110,7 @@ async function evaluatePronunciation(spokenText) {
     document.getElementById('scoreArea').classList.add('hidden');
 
     try {
-        const response = await fetch(`${window.API_BASE_URL}/api/pronunciation/evaluate`, {
+        const response = await fetch('/Practice/EvaluatePronunciation', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ language, targetText, spokenText })

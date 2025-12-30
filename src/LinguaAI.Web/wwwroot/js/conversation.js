@@ -51,7 +51,7 @@ async function sendMessage() {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
     try {
-        const response = await fetch(`${window.API_BASE_URL}/api/conversation/chat`, {
+        const response = await fetch('/Practice/Chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

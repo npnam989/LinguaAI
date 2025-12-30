@@ -17,7 +17,7 @@ async function generateReading() {
     document.getElementById('loadingArea').classList.remove('hidden');
 
     try {
-        const response = await fetch(`${window.API_BASE_URL}/api/reading/generate`, {
+        const response = await fetch('/Practice/GenerateReading', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ language, level, topic: topic || null })

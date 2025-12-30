@@ -9,6 +9,11 @@ public interface IApiService
     Task<VocabularyResponse?> GenerateVocabularyAsync(string language, string theme, int count);
     Task<VocabularyResponse?> UploadVocabularyFileAsync(Stream fileStream, string fileName);
     Task<TranslateResponse?> TranslateAsync(string text, string targetLanguage);
+    Task<ReadingResponse?> GenerateReadingAsync(string language, string level, string? topic);
+    Task<PronunciationResponse?> EvaluatePronunciationAsync(string language, string target, string spoken);
+    Task<WritingResponse?> CheckWritingAsync(string language, string text, string level);
+    Task<List<PronunciationPhrase>> GetPhrasesAsync(string language);
+    Task<ChatResponse?> ChatAsync(string language, string scenario, string message, List<ChatMessage> history);
     Task<List<ThemeItem>> GetThemesAsync();
 }
 
@@ -99,6 +104,77 @@ public class ApiService : IApiService
         {
             _logger.LogError(ex, "Error translating text");
             return null;
+        }
+    }
+
+    public async Task<ReadingResponse?> GenerateReadingAsync(string language, string level, string? topic)
+    {
+        try
+        {
+            var request = new ReadingRequest { Language = language, Level = level, Topic = topic };
+            return await SendWithAuthAsync<ReadingResponse>(HttpMethod.Post, "/api/reading/generate", request);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating reading");
+            return null;
+        }
+    }
+
+    public async Task<PronunciationResponse?> EvaluatePronunciationAsync(string language, string target, string spoken)
+    {
+        try
+        {
+            var request = new PronunciationRequest { Language = language, TargetText = target, SpokenText = spoken };
+            return await SendWithAuthAsync<PronunciationResponse>(HttpMethod.Post, "/api/pronunciation/evaluate", request);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error evaluating pronunciation");
+            return null;
+        }
+    }
+
+    public async Task<WritingResponse?> CheckWritingAsync(string language, string text, string level)
+    {
+        try
+        {
+            var request = new WritingRequest { Language = language, Text = text, Level = level };
+            return await SendWithAuthAsync<WritingResponse>(HttpMethod.Post, "/api/writing/check", request);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking writing");
+            return null;
+        }
+    }
+
+    public async Task<ChatResponse?> ChatAsync(string language, string scenario, string message, List<ChatMessage> history)
+    {
+        try
+        {
+            var request = new ChatRequest { Language = language, Scenario = scenario, Message = message, History = history };
+            return await SendWithAuthAsync<ChatResponse>(HttpMethod.Post, "/api/conversation/chat", request);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking chat");
+            return null;
+        }
+    }
+
+    public async Task<List<PronunciationPhrase>> GetPhrasesAsync(string language)
+    {
+        try
+        {
+            AddAuthHeader();
+            var response = await _httpClient.GetFromJsonAsync<List<PronunciationPhrase>>($"/api/pronunciation/phrases/{language}");
+            return response ?? new List<PronunciationPhrase>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting phrases");
+            return new List<PronunciationPhrase>();
         }
     }
 

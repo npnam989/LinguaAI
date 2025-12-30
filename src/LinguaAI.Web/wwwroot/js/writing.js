@@ -20,7 +20,7 @@ async function checkWriting() {
     document.getElementById('loadingArea').classList.remove('hidden');
 
     try {
-        const response = await fetch(`${window.API_BASE_URL}/api/writing/check`, {
+        const response = await fetch('/Practice/CheckWriting', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ language, text, level })

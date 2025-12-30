@@ -83,6 +83,39 @@ public class PracticeController : Controller
     }
 
     [HttpPost]
+    public async Task<IActionResult> GenerateReading([FromBody] ReadingRequest request)
+    {
+        var result = await _apiService.GenerateReadingAsync(request.Language, request.Level, request.Topic);
+        
+        if (result == null)
+            return StatusCode(500, new { error = "Failed to generate reading" });
+        
+        return Json(result);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> EvaluatePronunciation([FromBody] PronunciationRequest request)
+    {
+        var result = await _apiService.EvaluatePronunciationAsync(request.Language, request.TargetText, request.SpokenText);
+        
+        if (result == null)
+            return StatusCode(500, new { error = "Failed to evaluate pronunciation" });
+        
+        return Json(result);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CheckWriting([FromBody] WritingRequest request)
+    {
+        var result = await _apiService.CheckWritingAsync(request.Language, request.Text, request.Level);
+        
+        if (result == null)
+            return StatusCode(500, new { error = "Failed to check writing" });
+        
+        return Json(result);
+    }
+
+    [HttpPost]
     public async Task<IActionResult> Translate([FromBody] TranslateRequest request)
     {
         var result = await _apiService.TranslateAsync(request.Text, request.TargetLanguage);
@@ -90,6 +123,21 @@ public class PracticeController : Controller
         if (result == null)
             return StatusCode(500, new { error = "Failed to translate" });
         
+        return Json(result);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Chat([FromBody] ChatRequest request)
+    {
+        var result = await _apiService.ChatAsync(request.Language, request.Scenario, request.Message, request.History);
+        if (result == null) return StatusCode(500, new { error = "Failed to chat" });
+        return Json(result);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetPhrases(string language)
+    {
+        var result = await _apiService.GetPhrasesAsync(language);
         return Json(result);
     }
 
