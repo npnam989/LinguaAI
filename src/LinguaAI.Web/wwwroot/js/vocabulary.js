@@ -98,7 +98,7 @@ async function loadVocabulary() {
     document.getElementById('loadingArea').classList.remove('hidden');
 
     try {
-        const response = await fetch(`${window.API_BASE_URL}/api/vocabulary/generate`, {
+        const response = await fetch('/Practice/GenerateVocabulary', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ language, theme, count: 10 })
@@ -142,7 +142,7 @@ async function handleFileUpload(event) {
         const formData = new FormData();
         formData.append('file', file);
 
-        const response = await fetch(`${window.API_BASE_URL}/api/vocabulary/upload`, {
+        const response = await fetch('/Practice/UploadVocabulary', {
             method: 'POST',
             body: formData
         });
@@ -322,7 +322,7 @@ async function getTranslatedMeaning(meaning, targetLang) {
     }
 
     try {
-        const response = await fetch(`${window.API_BASE_URL}/api/vocabulary/translate`, {
+        const response = await fetch('/Practice/Translate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text: meaning, targetLanguage: targetLang })

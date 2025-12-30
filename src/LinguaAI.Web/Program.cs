@@ -1,11 +1,19 @@
+using LinguaAI.Web.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
 builder.Services.AddControllersWithViews();
-builder.Services.AddHttpClient();
 
 // API Base URL configuration
-builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
+var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5000";
+
+// Register HttpClientFactory with ApiService
+builder.Services.AddHttpClient<IApiService, ApiService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(60);
+});
 
 var app = builder.Build();
 
