@@ -36,7 +36,12 @@
     <!-- Scripts -->
     <script>
         window.API_BASE_URL = '@(ViewBag.ApiBaseUrl ?? "http://localhost:5000")';
+        window.AUTH_CONFIG = {
+            userId: '@(ViewBag.AuthUserId ?? "")',
+            apiKey: '@(ViewBag.AuthApiKey ?? "")'
+        };
     </script>
+    <script src="~/js/auth.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

@@ -1,4 +1,5 @@
 using LinguaAI.Api.Services;
+using LinguaAI.Api.Middleware;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 
@@ -17,6 +18,7 @@ builder.Services.AddSwaggerGen(c =>
 // Register services
 builder.Services.AddSingleton<IGeminiService, GeminiService>();
 builder.Services.AddSingleton<IFileParserService, FileParserService>();
+builder.Services.AddSingleton<ITimeBasedAuthService, TimeBasedAuthService>();
 
 // Rate Limiting - protect against abuse
 builder.Services.AddRateLimiter(options =>
@@ -85,6 +87,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseRateLimiter();
 app.UseCors("AllowWeb");
+app.UseApiKeyAuth(); // Time-based API key authentication
 app.MapControllers();
 
 app.Run();
