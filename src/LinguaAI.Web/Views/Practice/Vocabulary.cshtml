@@ -160,6 +160,18 @@
                 🎤
             </button>
             <p id="quizRecordStatus" style="color: var(--text-muted); margin-top: var(--space-md);">Nhấn để trả lời</p>
+            
+            <!-- Volume Meter -->
+            <div style="margin-top: var(--space-md); display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                <span style="font-size: 0.75rem; color: var(--text-muted);">🔇</span>
+                <div style="width: 150px; height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden;">
+                    <div id="volumeMeter" style="width: 0%; height: 100%; background: var(--accent-purple); transition: width 0.05s;"></div>
+                </div>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">🔊</span>
+            </div>
+            <button onclick="calibrateNoise()" style="margin-top: var(--space-sm); font-size: 0.75rem; padding: 0.25rem 0.5rem; background: transparent; color: var(--text-muted); border: 1px solid var(--text-muted); border-radius: 4px; cursor: pointer;">
+                🔇 Hiệu chỉnh tiếng ồn
+            </button>
         </div>
 
         <!-- User Answer -->
@@ -214,5 +226,44 @@
 </style>
 
 @section Scripts {
+<script src="~/js/audioProcessor.js" asp-append-version="true"></script>
 <script src="~/js/vocabulary.js" asp-append-version="true"></script>
+<script>
+    async function calibrateNoise() {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = '🔄 Đang hiệu chỉnh...';
+        btn.disabled = true;
+        
+        try {
+            if (!window.audioNoiseGate) {
+                await initNoiseGate();
+            }
+            
+            // Start monitoring to show volume
+            window.audioNoiseGate.startMonitoring((volume) => {
+                const meter = document.getElementById('volumeMeter');
+                if (meter) meter.style.width = Math.min(volume, 100) + '%';
+            });
+            
+            // Calibrate for 2 seconds
+            const threshold = await window.audioNoiseGate.calibrateNoiseFloor(2000);
+            
+            window.audioNoiseGate.stopMonitoring();
+            btn.textContent = `✅ Ngưỡng: ${threshold}`;
+            
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }, 2000);
+        } catch (e) {
+            console.error('Calibration error:', e);
+            btn.textContent = '❌ Lỗi';
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }, 2000);
+        }
+    }
+</script>
 }

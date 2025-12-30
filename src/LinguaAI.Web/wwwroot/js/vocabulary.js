@@ -431,10 +431,27 @@ function timeUp() {
     document.getElementById('quizRecordBtn').disabled = true;
 }
 
-function startQuizRecording() {
+async function startQuizRecording() {
     if (!quizRecognition) {
         alert('Trình duyệt không hỗ trợ nhận dạng giọng nói');
         return;
+    }
+
+    // Initialize noise gate if available
+    if (typeof initNoiseGate === 'function' && !window.audioNoiseGate) {
+        try {
+            await initNoiseGate();
+            // Start volume monitoring
+            window.audioNoiseGate.startMonitoring((volume, isVoice, threshold) => {
+                const meter = document.getElementById('volumeMeter');
+                if (meter) {
+                    meter.style.width = Math.min(volume, 100) + '%';
+                    meter.style.background = isVoice ? 'var(--accent-purple)' : 'var(--text-secondary)';
+                }
+            });
+        } catch (e) {
+            console.log('Noise gate not available:', e);
+        }
     }
 
     const language = document.getElementById('languageSelect').value;
@@ -457,6 +474,12 @@ function stopQuizRecording() {
             quizRecognition.stop();
         } catch (e) { }
     }
+
+    // Stop volume monitoring
+    if (window.audioNoiseGate) {
+        window.audioNoiseGate.stopMonitoring();
+    }
+
     document.getElementById('quizRecordBtn').style.background = '';
     document.getElementById('quizRecordBtn').textContent = '🎤';
 }
