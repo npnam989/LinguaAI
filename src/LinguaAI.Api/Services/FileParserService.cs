@@ -1,7 +1,7 @@
 using ClosedXML.Excel;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
-using LinguaAI.Api.Models;
+using LinguaAI.Common.Models;
 
 namespace LinguaAI.Api.Services;
 

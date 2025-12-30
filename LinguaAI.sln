@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinguaAI.Api", "src\LinguaA
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinguaAI.Web", "src\LinguaAI.Web\LinguaAI.Web.csproj", "{60839DC1-64BA-41BF-8B37-57FB50745141}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinguaAI.Desktop", "src\LinguaAI.Desktop\LinguaAI.Desktop.csproj", "{0FA8EE04-A3C6-4183-B5CD-F51F1D3E18B6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,18 @@ Global
 		{60839DC1-64BA-41BF-8B37-57FB50745141}.Release|x64.Build.0 = Release|Any CPU
 		{60839DC1-64BA-41BF-8B37-57FB50745141}.Release|x86.ActiveCfg = Release|Any CPU
 		{60839DC1-64BA-41BF-8B37-57FB50745141}.Release|x86.Build.0 = Release|Any CPU
+		{0FA8EE04-A3C6-4183-B5CD-F51F1D3E18B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0FA8EE04-A3C6-4183-B5CD-F51F1D3E18B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0FA8EE04-A3C6-4183-B5CD-F51F1D3E18B6}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0FA8EE04-A3C6-4183-B5CD-F51F1D3E18B6}.Debug|x64.Build.0 = Debug|Any CPU
+		{0FA8EE04-A3C6-4183-B5CD-F51F1D3E18B6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0FA8EE04-A3C6-4183-B5CD-F51F1D3E18B6}.Debug|x86.Build.0 = Debug|Any CPU
+		{0FA8EE04-A3C6-4183-B5CD-F51F1D3E18B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0FA8EE04-A3C6-4183-B5CD-F51F1D3E18B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0FA8EE04-A3C6-4183-B5CD-F51F1D3E18B6}.Release|x64.ActiveCfg = Release|Any CPU
+		{0FA8EE04-A3C6-4183-B5CD-F51F1D3E18B6}.Release|x64.Build.0 = Release|Any CPU
+		{0FA8EE04-A3C6-4183-B5CD-F51F1D3E18B6}.Release|x86.ActiveCfg = Release|Any CPU
+		{0FA8EE04-A3C6-4183-B5CD-F51F1D3E18B6}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -50,5 +64,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{A3401BE5-C31C-485D-A9AA-BA7ADB5D7AD2} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{60839DC1-64BA-41BF-8B37-57FB50745141} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{0FA8EE04-A3C6-4183-B5CD-F51F1D3E18B6} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

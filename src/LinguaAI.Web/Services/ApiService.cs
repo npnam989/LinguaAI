@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
-using LinguaAI.Web.Models;
+using LinguaAI.Common.Models;
 
 namespace LinguaAI.Web.Services;
 

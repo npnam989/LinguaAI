@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using LinguaAI.Common.Models;
 using LinguaAI.Web.Models;
 
 namespace LinguaAI.Web.Controllers;

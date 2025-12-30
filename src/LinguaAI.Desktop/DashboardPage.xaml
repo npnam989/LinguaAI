@@ -1,0 +1,13 @@
+<Page x:Class="LinguaAI.Desktop.DashboardPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      Title="Dashboard">
+    <Grid Margin="20">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+            <TextBlock Text="Chào mừng bạn đến với LinguaAI" FontSize="24" FontWeight="Bold" Margin="0,0,0,20" HorizontalAlignment="Center"/>
+            <Button Content="🎤 Luyện Phát Âm (Native)" Padding="15,10" FontSize="16" Background="#2563eb" Foreground="White" Command="{Binding PracticePronunciationCommand}" />
+        </StackPanel>
+    </Grid>
+</Page>

@@ -1,4 +1,4 @@
-namespace LinguaAI.Api.Models;
+namespace LinguaAI.Common.Models;
 
 public class ChatRequest
 {
@@ -104,4 +104,30 @@ public class VocabularyItem
     public string Meaning { get; set; } = string.Empty;
     public string Pronunciation { get; set; } = string.Empty;
     public string Example { get; set; } = string.Empty;
+}
+
+public class TranslateRequest
+{
+    public string Text { get; set; } = "";
+    public string? TargetLanguage { get; set; }
+}
+
+public class TranslateResponse
+{
+    public string Translated { get; set; } = "";
+    public string OriginalLanguage { get; set; } = "";
+}
+
+public class PronunciationPhrase
+{
+    public string Text { get; set; } = "";
+    public string Romanization { get; set; } = "";
+    public string Meaning { get; set; } = "";
+}
+
+public class ThemeItem
+{
+    public string Id { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Icon { get; set; } = "";
 }
