@@ -36,28 +36,70 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Initialize speech recognition for quiz
+// Initialize speech recognition for quiz with optimizations
 function initQuizSpeechRecognition() {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         quizRecognition = new SpeechRecognition();
+
+        // Optimized settings for faster recognition
         quizRecognition.continuous = false;
-        quizRecognition.interimResults = false;
+        quizRecognition.interimResults = true; // Enable interim results for faster feedback
+        quizRecognition.maxAlternatives = 3;   // Get multiple alternatives for better matching
+
+        let hasProcessed = false; // Prevent duplicate processing
 
         quizRecognition.onresult = (event) => {
-            const spokenText = event.results[0][0].transcript;
-            stopQuizRecording();
-            checkQuizAnswer(spokenText);
+            const result = event.results[0];
+
+            // Show interim result in real-time
+            const transcript = result[0].transcript;
+            document.getElementById('quizRecordStatus').textContent = `"${transcript}"`;
+
+            // Process final result OR confident interim result
+            if (result.isFinal || result[0].confidence > 0.7) {
+                if (!hasProcessed) {
+                    hasProcessed = true;
+                    stopQuizRecording();
+
+                    // Try all alternatives for better matching
+                    let bestMatch = transcript;
+                    const correctWord = vocabularyList[quizIndex]?.word?.toLowerCase();
+
+                    for (let i = 0; i < result.length; i++) {
+                        const alt = result[i].transcript.toLowerCase().trim();
+                        if (alt === correctWord || alt.includes(correctWord) || correctWord.includes(alt)) {
+                            bestMatch = result[i].transcript;
+                            break;
+                        }
+                    }
+
+                    checkQuizAnswer(bestMatch);
+                }
+            }
         };
 
         quizRecognition.onerror = (event) => {
             console.error('Speech recognition error:', event.error);
-            stopQuizRecording();
-            document.getElementById('quizRecordStatus').textContent = 'Lỗi nhận dạng. Thử lại hoặc bỏ qua.';
+            if (event.error === 'no-speech') {
+                document.getElementById('quizRecordStatus').textContent = 'Không nghe thấy. Nói gần mic hơn.';
+            } else if (event.error === 'audio-capture') {
+                document.getElementById('quizRecordStatus').textContent = 'Không tìm thấy microphone.';
+            } else {
+                stopQuizRecording();
+                document.getElementById('quizRecordStatus').textContent = 'Lỗi. Thử lại hoặc bỏ qua.';
+            }
         };
 
         quizRecognition.onend = () => {
-            stopQuizRecording();
+            if (!hasProcessed) {
+                stopQuizRecording();
+            }
+        };
+
+        quizRecognition.onaudiostart = () => {
+            hasProcessed = false;
+            document.getElementById('quizRecordStatus').textContent = 'Đang nghe...';
         };
     }
 }
