@@ -46,7 +46,7 @@ public partial class PronunciationPage : Page
             _recognizedText = ""; // Reset
             StatusText.Text = "Listening...";
             RecordButton.Content = "⏹ Stop";
-            RecordButton.Background = Brushes.Crimson;
+            RecordButton.Background = System.Windows.Media.Brushes.Crimson;
 
             // 1. Setup NAudio for Visualization
             _waveIn = new WaveInEvent();
@@ -90,7 +90,7 @@ public partial class PronunciationPage : Page
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Error starting recording: {ex.Message}");
+            System.Windows.MessageBox.Show($"Error starting recording: {ex.Message}");
             await StopRecordingAsync();
         }
     }
@@ -116,12 +116,12 @@ public partial class PronunciationPage : Page
             var barHeight = rms * height * 5; // Scale up
             if (barHeight > height) barHeight = height;
 
-            var rect = new Rectangle
+            var rect = new System.Windows.Shapes.Rectangle
             {
                 Width = width,
                 Height = barHeight,
-                Fill = Brushes.LightBlue,
-                HorizontalAlignment = HorizontalAlignment.Center
+                Fill = System.Windows.Media.Brushes.LightBlue,
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Center
             };
             
             Canvas.SetTop(rect, (height - barHeight) / 2);
@@ -134,7 +134,7 @@ public partial class PronunciationPage : Page
         _isRecording = false;
         StatusText.Text = "Processing...";
         RecordButton.Content = "🎤 Record";
-        RecordButton.Background = new SolidColorBrush(Color.FromRgb(37, 99, 235)); // #2563eb
+        RecordButton.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(37, 99, 235)); // #2563eb
 
         // Stop Audio
         if (_waveIn != null)

@@ -31,7 +31,7 @@ public partial class ConversationPage : Page
         NavigationService?.GoBack();
     }
 
-    private void MessageInput_KeyDown(object sender, KeyEventArgs e)
+    private void MessageInput_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (e.Key == Key.Enter)
         {
@@ -69,14 +69,14 @@ public partial class ConversationPage : Page
             Padding = new Thickness(10),
             Margin = new Thickness(5),
             MaxWidth = 600,
-            HorizontalAlignment = role == "user" ? HorizontalAlignment.Right : HorizontalAlignment.Left,
-            Background = role == "user" ? new SolidColorBrush(Color.FromRgb(37, 99, 235)) : new SolidColorBrush(Color.FromRgb(243, 244, 246))
+            HorizontalAlignment = role == "user" ? System.Windows.HorizontalAlignment.Right : System.Windows.HorizontalAlignment.Left,
+            Background = role == "user" ? new SolidColorBrush(System.Windows.Media.Color.FromRgb(37, 99, 235)) : new SolidColorBrush(System.Windows.Media.Color.FromRgb(243, 244, 246))
         };
 
         var text = new TextBlock
         {
             Text = content,
-            Foreground = role == "user" ? Brushes.White : Brushes.Black,
+            Foreground = role == "user" ? System.Windows.Media.Brushes.White : System.Windows.Media.Brushes.Black,
             TextWrapping = TextWrapping.Wrap
         };
 
@@ -114,12 +114,12 @@ public partial class ConversationPage : Page
 
             _recognizer.RecognizeAsync(RecognizeMode.Multiple);
             _isRecording = true;
-            MicButton.Background = Brushes.Crimson;
-            MicButton.Foreground = Brushes.White;
+            MicButton.Background = System.Windows.Media.Brushes.Crimson;
+            MicButton.Foreground = System.Windows.Media.Brushes.White;
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Error starting mic: {ex.Message}");
+            System.Windows.MessageBox.Show($"Error starting mic: {ex.Message}");
         }
     }
 
@@ -130,7 +130,7 @@ public partial class ConversationPage : Page
             _recognizer.RecognizeAsyncStop();
         }
         _isRecording = false;
-        MicButton.Background = new SolidColorBrush(Color.FromRgb(243, 244, 246)); // #f3f4f6
-        MicButton.Foreground = Brushes.Black;
+        MicButton.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(243, 244, 246)); // #f3f4f6
+        MicButton.Foreground = System.Windows.Media.Brushes.Black;
     }
 }

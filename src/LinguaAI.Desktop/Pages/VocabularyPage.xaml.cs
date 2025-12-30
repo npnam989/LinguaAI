@@ -35,7 +35,7 @@ public partial class VocabularyPage : Page
 
         if (selectedTheme == "custom")
         {
-            MessageBox.Show("File upload feature coming soon to Desktop.", "Info");
+            System.Windows.MessageBox.Show("File upload feature coming soon to Desktop.", "Info");
             return;
         }
 
@@ -54,7 +54,7 @@ public partial class VocabularyPage : Page
         }
         else
         {
-            MessageBox.Show("Failed to load vocabulary.", "Error");
+            System.Windows.MessageBox.Show("Failed to load vocabulary.", "Error");
         }
     }
 }
