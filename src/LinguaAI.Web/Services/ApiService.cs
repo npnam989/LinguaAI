@@ -150,7 +150,11 @@ public class ApiService : IApiService
         var apiKey = _config["Auth:ApiKey"]?.Trim();
 
         if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(apiKey))
+        {
+            _logger.LogWarning("Cannot add Auth Header: Missing credentials. UserId: {HasUser}, ApiKey: {HasKey}", 
+                !string.IsNullOrEmpty(userId), !string.IsNullOrEmpty(apiKey));
             return;
+        }
 
         var ticks = DateTime.UtcNow.Ticks;
         var window = ticks / WINDOW_TICKS;
