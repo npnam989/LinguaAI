@@ -59,8 +59,19 @@
         <!-- Quiz -->
         <div class="card" style="margin-top: var(--space-xl);">
             <h3 class="mb-3">❓ Câu hỏi đọc hiểu</h3>
+            
+            <!-- Timer Display inside Quiz Card or separately? -->
+            <div id="timerContainer" class="text-right mb-3" style="font-size: 1.2rem; font-weight: bold; color: var(--accent-gold);">
+                ⏱️ <span id="timeDisplay">00:00</span>
+            </div>
+
             <div id="quizArea"></div>
-            <button id="checkAnswersBtn" class="btn btn-primary mt-3 hidden" onclick="checkAnswers()">Kiểm tra đáp án</button>
+            
+            <div class="d-flex gap-3 mt-3">
+                <button id="checkAnswersBtn" class="btn btn-primary hidden" onclick="checkAnswers()">Kiểm tra đáp án</button>
+                <button id="nextLessonBtn" class="btn btn-secondary hidden" onclick="generateReading()">Bài tiếp theo ➡</button>
+            </div>
+            
             <div id="quizResult" class="hidden" style="margin-top: var(--space-lg);"></div>
         </div>
     </div>

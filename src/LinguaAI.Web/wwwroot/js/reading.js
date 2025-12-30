@@ -34,7 +34,39 @@ async function generateReading() {
     document.getElementById('loadingArea').classList.add('hidden');
 }
 
+// Timer variables
+let readingTimer = null;
+let secondsElapsed = 0;
+
+function startTimer() {
+    stopTimer();
+    secondsElapsed = 0;
+    updateTimeDisplay();
+    readingTimer = setInterval(() => {
+        secondsElapsed++;
+        updateTimeDisplay();
+    }, 1000);
+}
+
+function stopTimer() {
+    if (readingTimer) {
+        clearInterval(readingTimer);
+        readingTimer = null;
+    }
+}
+
+function updateTimeDisplay() {
+    const mins = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
+    const secs = (secondsElapsed % 60).toString().padStart(2, '0');
+    const display = document.getElementById('timeDisplay');
+    if (display) display.textContent = `${mins}:${secs}`;
+}
+
 function displayReading(data) {
+    // Reset buttons
+    document.getElementById('checkAnswersBtn').classList.add('hidden');
+    document.getElementById('nextLessonBtn').classList.add('hidden');
+
     // Title and content
     document.getElementById('readingTitle').textContent = data.title;
     document.getElementById('readingContent').innerHTML = data.content.replace(/\n/g, '<br><br>');
@@ -74,11 +106,13 @@ function displayReading(data) {
         document.getElementById('checkAnswersBtn').classList.remove('hidden');
     } else {
         quizArea.innerHTML = '<p style="color: var(--text-muted);">Không có câu hỏi</p>';
-        document.getElementById('checkAnswersBtn').classList.add('hidden');
     }
 
     document.getElementById('quizResult').classList.add('hidden');
     document.getElementById('contentArea').classList.remove('hidden');
+
+    // Start Timer
+    startTimer();
 }
 
 function selectAnswer(questionIdx, optionIdx) {
@@ -86,6 +120,8 @@ function selectAnswer(questionIdx, optionIdx) {
 }
 
 function checkAnswers() {
+    stopTimer(); // Stop the timer
+
     let correct = 0;
     quizData.forEach((q, idx) => {
         const labels = document.querySelectorAll(`[data-question="${idx}"]`);
@@ -106,10 +142,16 @@ function checkAnswers() {
 
     const result = document.getElementById('quizResult');
     const percentage = Math.round((correct / quizData.length) * 100);
+    const mins = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
+    const secs = (secondsElapsed % 60).toString().padStart(2, '0');
+
     result.innerHTML = `
         <div class="glass-panel" style="padding: var(--space-lg); text-align: center;">
             <p style="font-size: 2rem; font-weight: 700; color: ${percentage >= 70 ? 'var(--accent-green)' : 'var(--accent-gold)'};">
                 ${correct}/${quizData.length} (${percentage}%)
+            </p>
+            <p style="font-size: 1.1rem; color: var(--text-muted); margin: 0.5rem 0;">
+                ⏱️ Thời gian: ${mins}:${secs}
             </p>
             <p style="color: var(--text-secondary);">
                 ${percentage >= 70 ? '🎉 Tuyệt vời!' : percentage >= 50 ? '👍 Khá tốt!' : '💪 Cố gắng thêm nhé!'}
@@ -118,6 +160,7 @@ function checkAnswers() {
     `;
     result.classList.remove('hidden');
     document.getElementById('checkAnswersBtn').classList.add('hidden');
+    document.getElementById('nextLessonBtn').classList.remove('hidden'); // Show Next button
 }
 
 function escapeHtml(text) {
