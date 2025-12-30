@@ -146,8 +146,8 @@ public class ApiService : IApiService
 
     private void AddAuthHeader()
     {
-        var userId = _config["Auth:UserId"];
-        var apiKey = _config["Auth:ApiKey"];
+        var userId = _config["Auth:UserId"]?.Trim();
+        var apiKey = _config["Auth:ApiKey"]?.Trim();
 
         if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(apiKey))
             return;

@@ -60,11 +60,12 @@ public class TimeBasedAuthService : ITimeBasedAuthService
             var credentials = authHeader.Substring("HMAC-SHA256 ".Length);
             var parts = credentials.Split(':', 2);
             
-            if (parts.Length != 2)
-                return false;
-
             var userId = parts[0];
             var receivedHash = parts[1];
+
+            // Trim credentials to avoid copy-paste whitespace issues
+            expectedUserId = expectedUserId.Trim();
+            expectedApiKey = expectedApiKey.Trim();
 
             if (userId != expectedUserId)
             {
@@ -91,8 +92,8 @@ public class TimeBasedAuthService : ITimeBasedAuthService
 
             // Debug logging for failure (Masked API Key)
             var maskedKey = expectedApiKey.Length > 4 ? expectedApiKey.Substring(0, 4) + "***" : "***";
-            _logger.LogWarning("Invalid auth hash. User: {User}, KeyStart: {KeyStart}, CurrentTime: {Time}", 
-                userId, maskedKey, DateTime.UtcNow);
+            _logger.LogWarning("Invalid auth hash. User: {User}, KeyStart: {KeyStart}, KeyLen: {KeyLen}, Time: {Time}", 
+                userId, maskedKey, expectedApiKey.Length, DateTime.UtcNow);
             
             return false;
         }
