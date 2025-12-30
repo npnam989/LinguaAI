@@ -31,7 +31,13 @@ public class GeminiService : IGeminiService
     public GeminiService(IConfiguration config, ILogger<GeminiService> logger)
     {
         _logger = logger;
-        _apiKey = config["Gemini:ApiKey"] ?? throw new InvalidOperationException("Gemini API key not configured");
+        _apiKey = config["Gemini:ApiKey"] ?? "";
+        
+        if (string.IsNullOrEmpty(_apiKey))
+        {
+            _logger.LogWarning("Gemini API key not configured. Set environment variable: Gemini__ApiKey");
+        }
+        
         _httpClient = new HttpClient();
     }
 
