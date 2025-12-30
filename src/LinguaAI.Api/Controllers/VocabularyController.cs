@@ -101,25 +101,8 @@ public class VocabularyController : ControllerBase
         return Ok(themes);
     }
 
-    /// <summary>
-    /// Download sample Excel template
-    /// </summary>
-    [HttpGet("sample/excel")]
-    public IActionResult DownloadSampleExcel()
-    {
-        var bytes = _fileParser.GenerateSampleExcel();
-        return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "vocabulary_template.xlsx");
-    }
-
-    /// <summary>
-    /// Download sample Word template
-    /// </summary>
-    [HttpGet("sample/word")]
-    public IActionResult DownloadSampleWord()
-    {
-        var bytes = _fileParser.GenerateSampleWord();
-        return File(bytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "vocabulary_template.docx");
-    }
+    // Sample file downloads removed - now served as static files from Web project
+    // See: /samples/vocabulary_template.xlsx and /samples/vocabulary_template.docx
 
     /// <summary>
     /// Translate text to target language using AI
