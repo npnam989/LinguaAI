@@ -50,19 +50,32 @@ public class ApiService : IApiService
     {
         try
         {
+            // Copy stream to memory to allow re-reading
+            using var memoryStream = new MemoryStream();
+            await fileStream.CopyToAsync(memoryStream);
+            memoryStream.Position = 0;
+
             using var content = new MultipartFormDataContent();
-            using var streamContent = new StreamContent(fileStream);
+            var streamContent = new StreamContent(memoryStream);
+            streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(
+                fileName.EndsWith(".xlsx") 
+                    ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    : "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
             content.Add(streamContent, "file", fileName);
 
             AddAuthHeader();
             var response = await _httpClient.PostAsync("/api/vocabulary/upload", content);
+            var responseBody = await response.Content.ReadAsStringAsync();
+            
+            _logger.LogInformation("Upload response: {Status} - {Body}", response.StatusCode, responseBody);
             
             if (response.IsSuccessStatusCode)
             {
-                return await response.Content.ReadFromJsonAsync<VocabularyResponse>();
+                return System.Text.Json.JsonSerializer.Deserialize<VocabularyResponse>(responseBody, 
+                    new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
             
-            _logger.LogWarning("Upload failed: {Status}", response.StatusCode);
+            _logger.LogWarning("Upload failed: {Status} - {Body}", response.StatusCode, responseBody);
             return null;
         }
         catch (Exception ex)
