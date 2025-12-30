@@ -13,8 +13,8 @@ public partial class App : Application
 
         try 
         {
-            // Start API on localhost:5000
-            var args = new[] { "--urls=http://localhost:5000" };
+            // Start API on localhost:5278
+            var args = new[] { "--urls=http://localhost:5278" };
             
             // Create and start the API host
             // Use LinguaAI.Api.Program.CreateApp

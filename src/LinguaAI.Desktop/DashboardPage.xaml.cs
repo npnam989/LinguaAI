@@ -9,4 +9,9 @@ public partial class DashboardPage : Page
     {
         InitializeComponent();
     }
+
+    private void PracticeButton_Click(object sender, RoutedEventArgs e)
+    {
+        NavigationService?.Navigate(new Pages.PronunciationPage());
+    }
 }
