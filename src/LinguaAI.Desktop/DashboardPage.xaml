@@ -8,6 +8,7 @@
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
             <TextBlock Text="Chào mừng bạn đến với LinguaAI" FontSize="24" FontWeight="Bold" Margin="0,0,0,20" HorizontalAlignment="Center"/>
             <Button Content="🎤 Luyện Phát Âm (Native)" Padding="15,10" FontSize="16" Background="#2563eb" Foreground="White" Click="PracticeButton_Click" />
+            <Button Content="📚 Luyện Từ Vựng" Padding="15,10" FontSize="16" Background="#2563eb" Foreground="White" Margin="0,10,0,0" Click="VocabularyButton_Click" />
         </StackPanel>
     </Grid>
 </Page>

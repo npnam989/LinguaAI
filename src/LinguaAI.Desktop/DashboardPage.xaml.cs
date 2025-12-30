@@ -14,4 +14,9 @@ public partial class DashboardPage : Page
     {
         NavigationService?.Navigate(new Pages.PronunciationPage());
     }
+
+    private void VocabularyButton_Click(object sender, RoutedEventArgs e)
+    {
+        NavigationService?.Navigate(new Pages.VocabularyPage());
+    }
 }

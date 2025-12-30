@@ -70,4 +70,39 @@ public class LinguaApiService
             return null;
         }
     }
+
+    public async Task<List<ThemeItem>> GetThemesAsync()
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync("/api/vocabulary/themes");
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<List<ThemeItem>>() ?? new List<ThemeItem>();
+            }
+            return new List<ThemeItem>();
+        }
+        catch
+        {
+            return new List<ThemeItem>();
+        }
+    }
+
+    public async Task<VocabularyResponse?> GenerateVocabularyAsync(string language, string theme, int count)
+    {
+        try
+        {
+            var request = new VocabularyRequest { Language = language, Theme = theme, Count = count };
+            var response = await _httpClient.PostAsJsonAsync("/api/vocabulary/generate", request);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<VocabularyResponse>();
+            }
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
 }
