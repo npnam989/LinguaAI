@@ -13,7 +13,7 @@ public class HomeController : Controller
 
     public IActionResult Dashboard()
     {
-        ViewBag.ApiBaseUrl = "http://localhost:5000";
+        ViewBag.ApiBaseUrl = "https://linguaai.up.railway.app";
         return View();
     }
 
