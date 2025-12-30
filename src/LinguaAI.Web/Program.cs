@@ -5,8 +5,18 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container
 builder.Services.AddControllersWithViews();
 
-// API Base URL configuration
-var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5000";
+// API Base URL configuration - read from environment variable
+var apiBaseUrl = builder.Configuration["ApiBaseUrl"];
+if (string.IsNullOrEmpty(apiBaseUrl))
+{
+    apiBaseUrl = "http://localhost:5000";
+    Console.WriteLine("WARNING: ApiBaseUrl not configured. Using default: " + apiBaseUrl);
+    Console.WriteLine("Set environment variable: ApiBaseUrl=https://your-api.railway.app");
+}
+else
+{
+    Console.WriteLine("API Base URL: " + apiBaseUrl);
+}
 
 // Register HttpClientFactory with ApiService
 builder.Services.AddHttpClient<IApiService, ApiService>(client =>
