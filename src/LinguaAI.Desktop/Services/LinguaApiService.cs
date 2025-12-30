@@ -105,4 +105,30 @@ public class LinguaApiService
             return null;
         }
     }
+
+    public async Task<string> ChatAsync(string language, string scenario, string message, List<ChatMessage> history)
+    {
+        try
+        {
+            var request = new ChatRequest 
+            { 
+                Language = language, 
+                Scenario = scenario, 
+                Message = message, 
+                History = history 
+            };
+            
+            var response = await _httpClient.PostAsJsonAsync("/api/conversation/chat", request);
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<ChatResponse>();
+                return result?.Reply ?? "Sorry, I didn't catch that.";
+            }
+            return "Error calling API.";
+        }
+        catch (Exception ex)
+        {
+            return $"Error: {ex.Message}";
+        }
+    }
 }
