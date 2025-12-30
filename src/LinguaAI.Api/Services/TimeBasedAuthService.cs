@@ -27,7 +27,7 @@ public class TimeBasedAuthService : ITimeBasedAuthService
     public string GeneratePassword(string apiKey, long utcTicks)
     {
         var window = utcTicks / WINDOW_TICKS;
-        var input = $"{apiKey}{window}";
+        var input = FormattableString.Invariant($"{apiKey}{window}");
         return ComputeSha256Hash(input);
     }
 
@@ -67,12 +67,15 @@ public class TimeBasedAuthService : ITimeBasedAuthService
             var receivedHash = parts[1];
 
             if (userId != expectedUserId)
+            {
+                _logger.LogWarning("Auth UserID mismatch: received '{Received}', expected '{Expected}'", userId, expectedUserId);
                 return false;
+            }
 
-            // Check current, previous, and next time windows (allows 60s drift each direction)
+            // Check +/- 5 minutes window to rule out clock drift
             var currentTicks = DateTime.UtcNow.Ticks;
             
-            for (int offset = -1; offset <= 1; offset++)
+            for (int offset = -5; offset <= 5; offset++)
             {
                 var windowTicks = currentTicks + (offset * WINDOW_TICKS);
                 var password = GeneratePassword(expectedApiKey, windowTicks);
@@ -80,12 +83,17 @@ public class TimeBasedAuthService : ITimeBasedAuthService
 
                 if (receivedHash == expectedHash)
                 {
-                    _logger.LogDebug("Auth validated with window offset: {Offset}", offset);
+                    if (offset != 0) 
+                        _logger.LogWarning("Auth validated with DRIFT offset: {Offset} windows (Approx {Seconds}s)", offset, offset * 60);
                     return true;
                 }
             }
 
-            _logger.LogWarning("Invalid auth hash from userId: {UserId}", userId);
+            // Debug logging for failure (Masked API Key)
+            var maskedKey = expectedApiKey.Length > 4 ? expectedApiKey.Substring(0, 4) + "***" : "***";
+            _logger.LogWarning("Invalid auth hash. User: {User}, KeyStart: {KeyStart}, CurrentTime: {Time}", 
+                userId, maskedKey, DateTime.UtcNow);
+            
             return false;
         }
         catch (Exception ex)

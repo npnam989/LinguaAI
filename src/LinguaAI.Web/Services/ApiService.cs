@@ -154,8 +154,8 @@ public class ApiService : IApiService
 
         var ticks = DateTime.UtcNow.Ticks;
         var window = ticks / WINDOW_TICKS;
-        var password = ComputeSha256($"{apiKey}{window}");
-        var hash = ComputeSha256($"{userId}:{password}");
+        var password = ComputeSha256(FormattableString.Invariant($"{apiKey}{window}"));
+        var hash = ComputeSha256(FormattableString.Invariant($"{userId}:{password}"));
 
         _httpClient.DefaultRequestHeaders.Remove("Authorization");
         _httpClient.DefaultRequestHeaders.Add("Authorization", $"HMAC-SHA256 {userId}:{hash}");
