@@ -17,9 +17,8 @@ public class PracticeController : Controller
 
     private void SetApiBaseUrl()
     {
-        ViewBag.ApiBaseUrl = _config["ApiBaseUrl"] ?? "http://localhost:5000";
-        ViewBag.AuthUserId = _config["Auth:UserId"] ?? "";
-        ViewBag.AuthApiKey = _config["Auth:ApiKey"] ?? "";
+        // Auth credentials are now only used server-side in ApiService
+        // No longer exposed to frontend
     }
 
     public IActionResult Conversation()
