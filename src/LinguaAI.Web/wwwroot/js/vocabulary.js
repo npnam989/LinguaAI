@@ -9,9 +9,9 @@ let quizIndex = 0;
 let quizCorrect = 0;
 let quizWrong = 0;
 let quizTimer = null;
-let quizTimeLeft = 10;
+let quizTimeLeft = 15;
 let quizRecognition = null;
-const QUIZ_TIME_LIMIT = 10; // seconds
+const QUIZ_TIME_LIMIT = 15; // seconds
 
 // Translation cache for display meanings
 let translationCache = {};
