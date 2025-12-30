@@ -57,7 +57,7 @@ function initQuizSpeechRecognition() {
             document.getElementById('quizRecordStatus').textContent = `"${transcript}"`;
 
             // Process final result OR confident interim result
-            if (result.isFinal || result[0].confidence > 0.7) {
+            if (result.isFinal || result[0].confidence > 0.9) {
                 if (!hasProcessed) {
                     hasProcessed = true;
                     stopQuizRecording();
