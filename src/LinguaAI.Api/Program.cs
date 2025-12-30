@@ -8,14 +8,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// Swagger - only in Development
-if (builder.Environment.IsDevelopment())
+// Swagger - enabled for all environments
+builder.Services.AddSwaggerGen(c =>
 {
-    builder.Services.AddSwaggerGen(c =>
-    {
-        c.SwaggerDoc("v1", new() { Title = "LinguaAI API", Version = "v1" });
-    });
-}
+    c.SwaggerDoc("v1", new() { Title = "LinguaAI API", Version = "v1" });
+});
 
 // Register services
 builder.Services.AddSingleton<IGeminiService, GeminiService>();
@@ -72,16 +69,13 @@ app.Use(async (context, next) =>
     await next();
 });
 
-// Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
+// Swagger UI
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "LinguaAI API v1");
-        c.RoutePrefix = string.Empty;
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "LinguaAI API v1");
+    c.RoutePrefix = "swagger";
+});
 
 // HTTPS redirection in production
 if (!app.Environment.IsDevelopment())
