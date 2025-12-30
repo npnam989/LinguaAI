@@ -40,7 +40,7 @@ public class VocabularyController : ControllerBase
     /// Word format: Word - Meaning (each line) or Word | Meaning | Pronunciation | Example
     /// </summary>
     [HttpPost("upload")]
-    public ActionResult<VocabularyResponse> UploadFile(IFormFile file)
+    public async Task<ActionResult<VocabularyResponse>> UploadFile(IFormFile file)
     {
         if (file == null || file.Length == 0)
         {
@@ -73,7 +73,40 @@ public class VocabularyController : ControllerBase
                 return BadRequest(new { error = "Không tìm thấy từ vựng trong file. Vui lòng kiểm tra định dạng." });
             }
 
-            return Ok(new VocabularyResponse { Words = words });
+            string warning = "";
+            
+            // Limit to 100 words
+            if (words.Count > 100)
+            {
+                words = words.Take(100).ToList();
+                warning = "File quá lớn. Hệ thống chỉ xử lý 100 từ đầu tiên.";
+            }
+
+            // Check if enrichment is needed (missing pronunciation or example)
+            var wordsToEnrich = words.Where(w => string.IsNullOrWhiteSpace(w.Pronunciation) || string.IsNullOrWhiteSpace(w.Example)).ToList();
+            
+            if (wordsToEnrich.Count > 0)
+            {
+                // Call AI to enrich
+                var enrichInput = wordsToEnrich.Select(w => (w.Word, w.Meaning)).ToList();
+                var enrichedData = await _gemini.EnrichVocabularyAsync(enrichInput);
+
+                // Merge results
+                foreach (var item in wordsToEnrich)
+                {
+                    var match = enrichedData.FirstOrDefault(e => e.word.Equals(item.Word, StringComparison.InvariantCultureIgnoreCase));
+                    if (match != default)
+                    {
+                        if (string.IsNullOrWhiteSpace(item.Pronunciation)) item.Pronunciation = match.pronunciation;
+                        if (string.IsNullOrWhiteSpace(item.Example)) item.Example = match.example;
+                    }
+                }
+                
+                if (!string.IsNullOrEmpty(warning)) warning += " ";
+                warning += $"Đã tự động bổ sung thông tin cho {wordsToEnrich.Count} từ bằng AI.";
+            }
+
+            return Ok(new VocabularyResponse { Words = words, Warning = warning });
         }
         catch (Exception ex)
         {

@@ -12,7 +12,10 @@ public interface IGeminiService
     Task<(string title, string content, List<(string word, string meaning, string pronunciation, string example)> vocabulary, List<(string question, List<string> options, int correctIndex)> quiz)> GenerateReadingAsync(string language, string level, string? topic);
     Task<List<(string word, string meaning, string pronunciation, string example)>> GenerateVocabularyAsync(string language, string theme, int count);
     Task<string> TranslateAsync(string text, string targetLanguage);
+    Task<List<(string word, string meaning, string pronunciation, string example)>> EnrichVocabularyAsync(List<(string word, string meaning)> items);
 }
+
+
 
 public class GeminiService : IGeminiService
 {
@@ -313,5 +316,40 @@ Translation:";
             return text.Substring(start, end - start + 1);
         }
         return "{}";
+    }
+    public async Task<List<(string word, string meaning, string pronunciation, string example)>> EnrichVocabularyAsync(List<(string word, string meaning)> items)
+    {
+        if (items == null || items.Count == 0) return new List<(string, string, string, string)>();
+
+        var itemsList = string.Join("\n", items.Select(x => $"{x.word}: {x.meaning}"));
+        var prompt = $@"I have a list of vocabulary words. Please provide the IPA pronunciation and one short example sentence for each.
+Input:
+{itemsList}
+
+Respond in JSON format only (no markdown):
+{{
+    ""words"": [
+        {{""word"": ""<original word>"", ""meaning"": ""<original meaning>"", ""pronunciation"": ""<IPA>"", ""example"": ""<example sentence>""}}
+    ]
+}}";
+
+        var response = await CallGeminiAsync(prompt);
+        try
+        {
+            var json = ExtractJson(response);
+            using var doc = JsonDocument.Parse(json);
+            return doc.RootElement.GetProperty("words").EnumerateArray().Select(x => (
+                x.GetProperty("word").GetString() ?? "",
+                x.GetProperty("meaning").GetString() ?? "",
+                x.GetProperty("pronunciation").GetString() ?? "",
+                x.GetProperty("example").GetString() ?? ""
+            )).ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error enriching vocabulary");
+            // Return original items with empty extra fields on error
+            return items.Select(x => (x.word, x.meaning, "", "")).ToList();
+        }
     }
 }

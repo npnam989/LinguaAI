@@ -195,6 +195,10 @@ async function handleFileUpload(event) {
             throw new Error(data.error || 'Lỗi upload file');
         }
 
+        if (data.warning) {
+            alert(data.warning);
+        }
+
         vocabularyList = data.words || [];
         currentIndex = 0;
         vocabularySource = 'file';

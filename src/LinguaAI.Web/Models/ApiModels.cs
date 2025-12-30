@@ -13,6 +13,7 @@ public class VocabularyRequest
 public class VocabularyResponse
 {
     public List<VocabularyItem> Words { get; set; } = new();
+    public string Warning { get; set; } = string.Empty;
 }
 
 public class VocabularyItem
