@@ -13,7 +13,17 @@ public partial class App : System.Windows.Application
 
         try 
         {
-            // Start API on localhost:5278
+            // 1. Generate Ephemeral Credentials for this session
+            // This ensures the API Key is never stored on disk and changes every run.
+            // "Config trực tiếp trong ứng dụng" -> Configured dynamically in memory.
+            string userId = "desktop_user_" + Guid.NewGuid().ToString("N").Substring(0, 8);
+            string apiKey = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N"); // Strong random key
+
+            // 2. Inject into Environment for the API Host to pick up (via IConfiguration)
+            Environment.SetEnvironmentVariable("Auth__UserId", userId);
+            Environment.SetEnvironmentVariable("Auth__ApiKey", apiKey);
+
+            // 3. Start API on localhost:5278
             var args = new[] { "--urls=http://localhost:5278" };
             
             // Create and start the API host
