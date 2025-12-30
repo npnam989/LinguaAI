@@ -18,14 +18,19 @@ public class PronunciationController : ControllerBase
     [HttpPost("evaluate")]
     public async Task<ActionResult<PronunciationResponse>> Evaluate([FromBody] PronunciationRequest request)
     {
-        var (score, feedback, corrections) = await _gemini.EvaluatePronunciationAsync(
-            request.Language, request.TargetText, request.SpokenText);
-        
+        var (score, feedback, corrections, words) = await _gemini.EvaluatePronunciationAsync(request.Language, request.TargetText, request.SpokenText);
+
         return Ok(new PronunciationResponse
         {
             Score = score,
             Feedback = feedback,
-            Corrections = corrections
+            Corrections = corrections,
+            Words = words.Select(w => new PronunciationWordResult
+            {
+                Word = w.word,
+                Correct = w.correct,
+                Error = w.error
+            }).ToList()
         });
     }
 

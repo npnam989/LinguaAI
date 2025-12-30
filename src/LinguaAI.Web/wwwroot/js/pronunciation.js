@@ -86,6 +86,9 @@ function startRecording() {
 
     recognition.start();
 
+    // Start Visualizer
+    startVisualizer();
+
     document.getElementById('recordBtn').style.background = 'var(--accent-pink)';
     document.getElementById('recordBtn').textContent = '⏹️';
     document.getElementById('recordStatus').textContent = 'Đang nghe...';
@@ -97,6 +100,8 @@ function startRecording() {
 
 function stopRecording() {
     isRecording = false;
+    stopVisualizer(); // Stop Visualizer
+
     document.getElementById('recordBtn').style.background = '';
     document.getElementById('recordBtn').textContent = '🎤';
     document.getElementById('recordStatus').textContent = 'Nhấn để ghi âm';
@@ -133,6 +138,19 @@ function displayScore(data) {
     document.getElementById('scoreValue').textContent = data.score;
     document.getElementById('feedbackText').textContent = data.feedback;
 
+    // Detailed Words Result
+    const detailedDiv = document.getElementById('detailedResult');
+    if (data.words && data.words.length > 0) {
+        detailedDiv.innerHTML = data.words.map(w =>
+            `<span style="color: ${w.correct ? 'var(--accent-green)' : 'var(--accent-pink)'}; margin: 0 4px; display: inline-block;">
+                ${escapeHtml(w.word)}
+                ${!w.correct ? `<br><small style="font-size: 0.8rem; color: var(--text-muted);">${w.error || 'Check this'}</small>` : ''}
+            </span>`
+        ).join('');
+    } else {
+        detailedDiv.textContent = '';
+    }
+
     const correctionsDiv = document.getElementById('corrections');
     if (data.corrections && data.corrections.length > 0) {
         correctionsDiv.innerHTML = data.corrections.map(c =>
@@ -156,4 +174,92 @@ function displayScore(data) {
         scoreCircle.style.setProperty('--score', currentScore);
         document.getElementById('scoreValue').textContent = currentScore;
     }, 20);
+}
+
+// --- Visualizer Logic ---
+let audioContext, analyser, microphone, dataArray, canvasCtx, visualizerId;
+async function startVisualizer() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            audio: { echoCancellation: true, noiseSuppression: true }
+        });
+
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
+        microphone = audioContext.createMediaStreamSource(stream);
+        microphone.connect(analyser);
+        analyser.fftSize = 64; // Low FFT size for simple bars
+
+        const bufferLength = analyser.frequencyBinCount;
+        dataArray = new Uint8Array(bufferLength);
+
+        const canvas = document.getElementById('audioVisualizer');
+        canvasCtx = canvas.getContext('2d');
+
+        drawVisualizer();
+    } catch (err) {
+        console.error("Visualizer init error", err);
+    }
+}
+
+function stopVisualizer() {
+    if (microphone) {
+        microphone.mediaStream.getTracks().forEach(track => track.stop());
+        microphone.disconnect();
+    }
+    if (audioContext && audioContext.state !== 'closed') audioContext.close();
+    if (visualizerId) cancelAnimationFrame(visualizerId);
+
+    // Clear canvas
+    const canvas = document.getElementById('audioVisualizer');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+}
+
+function drawVisualizer() {
+    visualizerId = requestAnimationFrame(drawVisualizer);
+    if (!analyser) return;
+
+    analyser.getByteFrequencyData(dataArray);
+
+    const canvas = document.getElementById('audioVisualizer');
+    if (!canvas) return;
+
+    const width = canvas.width;
+    const height = canvas.height;
+
+    canvasCtx.clearRect(0, 0, width, height);
+
+    // Filter Noise Gate
+    let sum = 0;
+    for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+    const average = sum / dataArray.length;
+
+    if (average < 10) return; // Noise threshold to ignore silence/background noise
+
+    const barWidth = (width / dataArray.length) * 2.5;
+    let barHeight;
+    let x = 0;
+
+    for (let i = 0; i < dataArray.length; i++) {
+        barHeight = dataArray[i] / 2; // Scale down
+
+        // Gradient color
+        const gradient = canvasCtx.createLinearGradient(0, 0, 0, height);
+        gradient.addColorStop(0, '#4ade80');
+        gradient.addColorStop(1, '#3b82f6');
+
+        canvasCtx.fillStyle = gradient;
+        canvasCtx.fillRect(x, height - barHeight, barWidth, barHeight);
+
+        x += barWidth + 1;
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }

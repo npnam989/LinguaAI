@@ -115,6 +115,14 @@ public class PronunciationResponse
     public int Score { get; set; }
     public string Feedback { get; set; } = "";
     public List<string> Corrections { get; set; } = new();
+    public List<PronunciationWordResult> Words { get; set; } = new();
+}
+
+public class PronunciationWordResult
+{
+    public string Word { get; set; } = "";
+    public bool Correct { get; set; }
+    public string? Error { get; set; }
 }
 
 // Theme Models

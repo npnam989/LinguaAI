@@ -7,7 +7,7 @@ namespace LinguaAI.Api.Services;
 public interface IGeminiService
 {
     Task<string> ChatAsync(string language, string scenario, string message, List<(string role, string content)> history);
-    Task<(int score, string feedback, List<string> corrections)> EvaluatePronunciationAsync(string language, string target, string spoken);
+    Task<(int score, string feedback, List<string> corrections, List<(string word, bool correct, string error)> words)> EvaluatePronunciationAsync(string language, string target, string spoken);
     Task<(string corrected, List<(string orig, string fix, string explanation)> corrections, List<string> suggestions)> CheckWritingAsync(string language, string text, string level);
     Task<(string title, string content, List<(string word, string meaning, string pronunciation, string example)> vocabulary, List<(string question, List<string> options, int correctIndex)> quiz)> GenerateReadingAsync(string language, string level, string? topic);
     Task<List<(string word, string meaning, string pronunciation, string example)>> GenerateVocabularyAsync(string language, string theme, int count);
@@ -115,19 +115,23 @@ Rules:
         return await CallGeminiAsync(prompt);
     }
 
-    public async Task<(int score, string feedback, List<string> corrections)> EvaluatePronunciationAsync(string language, string target, string spoken)
+    public async Task<(int score, string feedback, List<string> corrections, List<(string word, bool correct, string error)> words)> EvaluatePronunciationAsync(string language, string target, string spoken)
     {
         var langName = GetLanguageName(language);
         var prompt = $@"You are a {langName} pronunciation expert. Compare the target text with what was spoken.
+Analyze the pronunciation of EACH word.
 
 Target: {target}
 Spoken: {spoken}
 
 Respond in JSON format only (no markdown):
 {{
-    ""score"": <0-100>,
-    ""feedback"": ""<brief feedback in Vietnamese>"",
-    ""corrections"": [""<specific pronunciation tips in Vietnamese>""]
+    ""score"": <0-100 overall score>,
+    ""feedback"": ""<brief feedback in VietnameseSummary>"",
+    ""corrections"": [""<general tips in Vietnamese>""],
+    ""words"": [
+        {{ ""word"": ""<target word>"", ""correct"": true/false, ""error"": ""<brief error description if false>"" }}
+    ]
 }}";
 
         var response = await CallGeminiAsync(prompt);
@@ -136,15 +140,27 @@ Respond in JSON format only (no markdown):
             var json = ExtractJson(response);
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
+            
+            var words = new List<(string, bool, string)>();
+            if (root.TryGetProperty("words", out var wordsEl))
+            {
+                words = wordsEl.EnumerateArray().Select(x => (
+                    x.GetProperty("word").GetString() ?? "",
+                    x.GetProperty("correct").GetBoolean(),
+                    x.TryGetProperty("error", out var err) ? err.GetString() ?? "" : ""
+                )).ToList();
+            }
+
             return (
                 root.GetProperty("score").GetInt32(),
                 root.GetProperty("feedback").GetString() ?? "",
-                root.GetProperty("corrections").EnumerateArray().Select(x => x.GetString() ?? "").ToList()
+                root.GetProperty("corrections").EnumerateArray().Select(x => x.GetString() ?? "").ToList(),
+                words
             );
         }
         catch
         {
-            return (50, "Không thể đánh giá phát âm", new List<string>());
+            return (50, "Không thể đánh giá chi tiết", new List<string>(), new List<(string, bool, string)>());
         }
     }
 
