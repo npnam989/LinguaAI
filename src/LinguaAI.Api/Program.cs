@@ -71,7 +71,8 @@ app.Use(async (context, next) =>
     await next();
 });
 
-// Swagger UI
+// Swagger UI - Protected by Basic Auth
+app.UseMiddleware<SwaggerBasicAuthMiddleware>();
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {

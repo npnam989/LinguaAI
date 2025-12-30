@@ -82,7 +82,8 @@ public class TimeBasedAuthService : ITimeBasedAuthService
                 var password = GeneratePassword(expectedApiKey, windowTicks);
                 var expectedHash = GenerateHash(expectedUserId, password);
 
-                if (receivedHash == expectedHash)
+                // Constant-time comparison to prevent timing attacks
+                if (FixedTimeEquals(receivedHash, expectedHash))
                 {
                     if (offset != 0) 
                         _logger.LogWarning("Auth validated with DRIFT offset: {Offset} windows (Approx {Seconds}s)", offset, offset * 60);
@@ -102,6 +103,14 @@ public class TimeBasedAuthService : ITimeBasedAuthService
             _logger.LogError(ex, "Error validating auth header");
             return false;
         }
+    }
+
+    private static bool FixedTimeEquals(string str1, string str2)
+    {
+        if (str1.Length != str2.Length) return false;
+        var bytes1 = Encoding.UTF8.GetBytes(str1);
+        var bytes2 = Encoding.UTF8.GetBytes(str2);
+        return CryptographicOperations.FixedTimeEquals(bytes1, bytes2);
     }
 
     private static string ComputeSha256Hash(string input)
