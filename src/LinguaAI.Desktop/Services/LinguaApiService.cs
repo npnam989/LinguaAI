@@ -8,7 +8,7 @@ namespace LinguaAI.Desktop.Services;
 public class LinguaApiService
 {
     private readonly HttpClient _httpClient;
-    private const string BaseUrl = "http://localhost:5278"; // Local self-hosted API
+    public static string BaseUrl { get; set; } = "http://localhost:5278"; // Default, updated by App.xaml.cs
     private const long WINDOW_TICKS = 600_000_000; // 60 seconds
 
     public LinguaApiService()

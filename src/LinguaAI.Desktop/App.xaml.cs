@@ -23,8 +23,15 @@ public partial class App : System.Windows.Application
             Environment.SetEnvironmentVariable("Auth__UserId", userId);
             Environment.SetEnvironmentVariable("Auth__ApiKey", apiKey);
 
-            // 3. Start API on localhost:5278
-            var args = new[] { "--urls=http://localhost:5278" };
+            // 3. Find a free port dynamically to avoid "Address already in use"
+            int port = GetAvailablePort();
+            string url = $"http://localhost:{port}";
+            
+            // 4. Update Client Configuration
+            Services.LinguaApiService.BaseUrl = url;
+
+            // 5. Start API on the dynamic port
+            var args = new[] { $"--urls={url}" };
             
             // Create and start the API host
             // Use LinguaAI.Api.Program.CreateApp
@@ -37,6 +44,15 @@ public partial class App : System.Windows.Application
         {
             System.Windows.MessageBox.Show($"Failed to start API: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             Shutdown();
+        }
+    }
+
+    private int GetAvailablePort()
+    {
+        using (var socket = new System.Net.Sockets.Socket(System.Net.Sockets.AddressFamily.InterNetwork, System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp))
+        {
+            socket.Bind(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 0));
+            return ((System.Net.IPEndPoint)socket.LocalEndPoint!).Port;
         }
     }
 
