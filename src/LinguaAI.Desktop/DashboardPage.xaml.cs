@@ -24,4 +24,9 @@ public partial class DashboardPage : Page
     {
         NavigationService?.Navigate(new Pages.ConversationPage());
     }
+
+    private void ReadingButton_Click(object sender, RoutedEventArgs e)
+    {
+        NavigationService?.Navigate(new Pages.ReadingPage());
+    }
 }

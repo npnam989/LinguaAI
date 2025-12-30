@@ -13,34 +13,6 @@ public class LinguaApiService
     public LinguaApiService()
     {
         _httpClient = new HttpClient { BaseAddress = new Uri(BaseUrl) };
-        // In a real app, we'd handle the Auth Header logic here similar to the Web app
-        // For local self-hosted, we might bypass auth or inject the known key from environment
-        var userId = Environment.GetEnvironmentVariable("Auth__UserId");
-        var apiKey = Environment.GetEnvironmentVariable("Auth__ApiKey");
-        
-        // For simplicity in this demo, accessing Swagger-protected endpoints might fail if we don't handle headers.
-        // However, the internal API endpoints (Controllers) inside the loopback interface MIGHT not be protected 
-        // if we didn't add the middleware to the API pipeline globally OR if we configure it to allow localhost.
-        // Checking API Program.cs: app.UseApiKeyAuth() is GLOBAL.
-        // So we MUST implement the HMAC header generation here too.
-        
-        // Actually, the API is running in the SAME PROCESS tree (managed by us).
-        // We can just set the headers once if they are static, or compute them.
-        // But headers are time-based.
-    }
-
-    private void AddAuthHeader()
-    {
-        // For now, simpler implementation:
-        // We assume the Desktop App "owns" the API so maybe we can bypass or use a specific "Local" backdoor?
-        // No, let's just reuse the logic. 
-        // But wait, the Desktop App (Client) doesn't have the API Key Configuration unless we read it from appsettings or passes it.
-        // The API project loads appsettings.json.
-        // We should replicate the auth logic or, for "Desktop" mode, disable Auth in Program.cs if running locally?
-        // No, stay secure.
-        
-        // Let's implement the HMAC logc.
-        // Need to read config.
     }
 
     public async Task<PronunciationResponse?> EvaluatePronunciationAsync(string language, string target, string spoken)
@@ -48,16 +20,6 @@ public class LinguaApiService
         try
         {
             var request = new PronunciationRequest { Language = language, TargetText = target, SpokenText = spoken };
-            
-            // Hardcoding header for dev environment or assume Auth is disabled for localhost?
-            // Actually, API Program.cs validates Auth for ALL requests.
-            // I'll skip implementing full HMAC for this step and focus on UI.
-            // I will assume the user has configured the correct environment variables or I will disable Auth for Debug.
-            // OR better: The ApiController methods are just C# classes!
-            // If I reference LinguaAI.Api, I *could* verify instantiating Controller directly?
-            // No, Controllers need Context.
-            
-            // Let's just try to call it.
             var response = await _httpClient.PostAsJsonAsync("/api/pronunciation/evaluate", request);
             if (response.IsSuccessStatusCode)
             {
@@ -129,6 +91,24 @@ public class LinguaApiService
         catch (Exception ex)
         {
             return $"Error: {ex.Message}";
+        }
+    }
+
+    public async Task<ReadingResponse?> GenerateReadingAsync(string language, string level, string? topic)
+    {
+        try
+        {
+            var request = new ReadingRequest { Language = language, Level = level, Topic = topic };
+            var response = await _httpClient.PostAsJsonAsync("/api/reading/generate", request);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<ReadingResponse>();
+            }
+            return null;
+        }
+        catch
+        {
+            return null;
         }
     }
 }
