@@ -4,7 +4,7 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       Title="WritingPage">
-    <Grid Margin="20">
+    <Grid Style="{DynamicResource PageBase}" Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="2*"/>
@@ -13,8 +13,8 @@
 
         <!-- Back Button & Header -->
         <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
-            <Button Content="⬅ Dashboard" Padding="10,5" Click="BackButton_Click"/>
-            <TextBlock Text="Writing Practice" FontSize="20" FontWeight="Bold" Margin="20,0,0,0" VerticalAlignment="Center"/>
+            <Button Content="⬅" Padding="10,5" Click="BackButton_Click" Style="{DynamicResource ModernButton}" Width="40"/>
+            <TextBlock Text="Writing Practice" Style="{DynamicResource HeaderTitle}" Margin="20,0,0,20" VerticalAlignment="Center"/>
         </StackPanel>
 
         <!-- Input Area -->

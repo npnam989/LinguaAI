@@ -34,4 +34,15 @@ public partial class DashboardPage : Page
     {
         NavigationService?.Navigate(new Pages.WritingPage());
     }
+
+    private bool _isDark = false;
+    private void ThemeToggle_Click(object sender, RoutedEventArgs e)
+    {
+        _isDark = !_isDark;
+        Services.ThemeManager.SetTheme(_isDark ? Services.ThemeManager.Theme.Dark : Services.ThemeManager.Theme.Light);
+        if (sender is System.Windows.Controls.Primitives.ToggleButton toggle)
+        {
+            toggle.Content = _isDark ? "☀️ Light Mode" : "🌙 Dark Mode";
+        }
+    }
 }
