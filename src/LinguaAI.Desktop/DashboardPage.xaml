@@ -26,8 +26,6 @@
                 <Button Content="💬 Conversation Practice" Style="{DynamicResource ModernButton}" Click="ConversationButton_Click" />
                 <Button Content="📖 Reading Comprehension" Style="{DynamicResource ModernButton}" Click="ReadingButton_Click" />
                 <Button Content="✍️ Writing Correction" Style="{DynamicResource ModernButton}" Click="WritingButton_Click" />
-
-                <ToggleButton x:Name="ThemeToggle" Content="🌙 Dark Mode" Margin="0,20,0,0" HorizontalAlignment="Center" Click="ThemeToggle_Click" Padding="10,5" Cursor="Hand"/>
             </StackPanel>
         </Border>
     </Grid>

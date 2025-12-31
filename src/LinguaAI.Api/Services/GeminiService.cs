@@ -13,6 +13,7 @@ public interface IGeminiService
     Task<List<(string word, string meaning, string pronunciation, string example)>> GenerateVocabularyAsync(string language, string theme, int count);
     Task<string> TranslateAsync(string text, string targetLanguage);
     Task<List<(string word, string meaning, string pronunciation, string example)>> EnrichVocabularyAsync(List<(string word, string meaning)> items);
+    Task<string> TranscribeAudioAsync(byte[] audioData, string language, string mimeType = "audio/wav");
 }
 
 
@@ -366,6 +367,73 @@ Respond in JSON format only (no markdown):
             _logger.LogError(ex, "Error enriching vocabulary");
             // Return original items with empty extra fields on error
             return items.Select(x => (x.word, x.meaning, "", "")).ToList();
+        }
+    }
+
+    public async Task<string> TranscribeAudioAsync(byte[] audioData, string language, string mimeType = "audio/wav")
+    {
+        try
+        {
+            var langName = GetLanguageName(language);
+            var base64Audio = Convert.ToBase64String(audioData);
+
+            // Gemini request with audio input
+            var requestBody = new
+            {
+                contents = new[]
+                {
+                    new
+                    {
+                        parts = new object[]
+                        {
+                            new
+                            {
+                                inline_data = new
+                                {
+                                    mime_type = mimeType,
+                                    data = base64Audio
+                                }
+                            },
+                            new
+                            {
+                                text = $"Please transcribe the audio. The speaker is saying a word or phrase in {langName}. " +
+                                       "Return ONLY the transcribed text, nothing else. " +
+                                       "If you cannot understand the audio clearly, return your best guess. " +
+                                       "Do not add any explanation or punctuation, just the word(s)."
+                            }
+                        }
+                    }
+                }
+            };
+
+            var json = JsonSerializer.Serialize(requestBody);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            
+            // Use Gemini Pro for audio (Pro supports multimodal)
+            var audioUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+            var response = await _httpClient.PostAsync($"{audioUrl}?key={_apiKey}", content);
+            var responseText = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                using var doc = JsonDocument.Parse(responseText);
+                var text = doc.RootElement
+                    .GetProperty("candidates")[0]
+                    .GetProperty("content")
+                    .GetProperty("parts")[0]
+                    .GetProperty("text")
+                    .GetString();
+
+                return text?.Trim() ?? "";
+            }
+
+            _logger.LogError("Gemini transcribe error: {Response}", responseText);
+            return "";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error transcribing audio");
+            return "";
         }
     }
 }

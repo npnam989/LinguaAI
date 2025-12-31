@@ -61,6 +61,38 @@
                             Style="{DynamicResource PrimaryButton}"
                             HorizontalAlignment="Center" Margin="0,10,0,0"
                             Click="GenerateButton_Click"/>
+                    
+                    <!-- File Upload Section -->
+                    <Border Margin="0,20,0,0" Padding="15,0,15,15" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource Border}">
+                        <StackPanel>
+                            <TextBlock Text="📤 Hoặc tải danh sách từ file của bạn" 
+                                       Foreground="{DynamicResource SecondaryText}" 
+                                       HorizontalAlignment="Center" Margin="0,15,0,10"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button x:Name="UploadButton" Content="📁 Chọn file Excel/Word" 
+                                        Style="{DynamicResource SecondaryButton}"
+                                        Click="UploadButton_Click"/>
+                                <TextBlock x:Name="FileNameText" Text="" 
+                                           Foreground="{DynamicResource MutedText}" 
+                                           VerticalAlignment="Center" Margin="15,0,0,0"/>
+                            </StackPanel>
+                            <TextBlock Text="Excel: Cột A=Từ, B=Nghĩa, C=Phát âm, D=Ví dụ | Word: Từ - Nghĩa (mỗi dòng)" 
+                                       Foreground="{DynamicResource MutedText}" FontSize="11"
+                                       HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                            
+                            <!-- Download Templates -->
+                            <WrapPanel HorizontalAlignment="Center" Margin="0,15,0,0">
+                                <Button Content="📥 Tải file mẫu Excel" 
+                                        Style="{DynamicResource SecondaryButton}"
+                                        FontSize="12" Padding="8,4" Margin="5"
+                                        Click="DownloadExcelTemplate_Click"/>
+                                <Button Content="📥 Tải file mẫu Word" 
+                                        Style="{DynamicResource SecondaryButton}"
+                                        FontSize="12" Padding="8,4" Margin="5"
+                                        Click="DownloadWordTemplate_Click"/>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </Border>
 
@@ -78,6 +110,9 @@
                 <Button x:Name="FlashcardModeBtn" Content="🃏 Flashcard" 
                         Style="{DynamicResource PrimaryButton}" Margin="5"
                         Click="FlashcardMode_Click"/>
+                <Button x:Name="QuizModeBtn" Content="🎤 Kiểm tra nói" 
+                        Style="{DynamicResource SecondaryButton}" Margin="5"
+                        Click="QuizMode_Click"/>
                 <Button x:Name="ListModeBtn" Content="📋 Danh sách" 
                         Style="{DynamicResource SecondaryButton}" Margin="5"
                         Click="ListMode_Click"/>
@@ -123,6 +158,132 @@
                         <Button Content="Tiếp ➡️" Style="{DynamicResource PrimaryButton}" 
                                 Margin="5" Click="NextCard_Click"/>
                     </WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Speaking Quiz Area -->
+            <Border x:Name="QuizArea" Visibility="Collapsed" Margin="0,20">
+                <StackPanel HorizontalAlignment="Center" MaxWidth="500">
+                    <!-- Quiz Progress -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,15">
+                        <TextBlock Text="Câu " Foreground="{DynamicResource SecondaryText}"/>
+                        <TextBlock x:Name="QuizCurrentIndex" Text="1" FontSize="20" FontWeight="Bold" 
+                                   Foreground="{DynamicResource PrimaryLight}"/>
+                        <TextBlock Text=" / " Foreground="{DynamicResource MutedText}"/>
+                        <TextBlock x:Name="QuizTotalCount" Text="10" FontSize="20" Foreground="{DynamicResource MutedText}"/>
+                    </StackPanel>
+
+                    <!-- Timer -->
+                    <StackPanel HorizontalAlignment="Center" Margin="0,0,0,20">
+                        <TextBlock x:Name="QuizTimerText" Text="10" FontSize="48" FontWeight="Bold" 
+                                   Foreground="{DynamicResource AccentGold}" HorizontalAlignment="Center"/>
+                        <Border Background="{DynamicResource SurfaceBackground}" CornerRadius="4" Width="200" Height="8">
+                            <Border x:Name="QuizTimerBar" Background="{DynamicResource GradientPrimary}" 
+                                    CornerRadius="4" HorizontalAlignment="Left" Width="200"/>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Quiz Card - Shows meaning -->
+                    <Border Style="{DynamicResource CardStyle}" Padding="30" Margin="0,0,0,20">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Nghĩa tiếng Việt:" Foreground="{DynamicResource MutedText}" 
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="QuizMeaning" Text="" FontSize="24" FontWeight="Bold" 
+                                       Foreground="{DynamicResource PrimaryLight}" HorizontalAlignment="Center"
+                                       Margin="0,10,0,0" TextWrapping="Wrap"/>
+                            <TextBlock x:Name="QuizHint" Text="" Visibility="Collapsed"
+                                       Foreground="{DynamicResource MutedText}" FontSize="12"
+                                       HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Record Button -->
+                    <StackPanel HorizontalAlignment="Center" Margin="0,0,0,20">
+                        <Button x:Name="QuizRecordBtn" Width="100" Height="100" 
+                                Style="{DynamicResource PrimaryButton}"
+                                Click="QuizRecord_Click">
+                            <TextBlock Text="🎤" FontSize="40"/>
+                        </Button>
+                        <TextBlock x:Name="QuizRecordStatus" Text="Nhấn để trả lời" 
+                                   Foreground="{DynamicResource MutedText}" 
+                                   HorizontalAlignment="Center" Margin="0,15,0,0"/>
+
+                        <!-- Volume Meter -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+                            <TextBlock Text="🔇 " Foreground="{DynamicResource MutedText}" FontSize="10"/>
+                            <Border Background="{DynamicResource SurfaceBackground}" CornerRadius="4" Width="150" Height="8">
+                                <Border x:Name="VolumeMeter" Background="{DynamicResource Primary}" 
+                                        CornerRadius="4" HorizontalAlignment="Left" Width="0"/>
+                            </Border>
+                            <TextBlock Text=" 🔊" Foreground="{DynamicResource MutedText}" FontSize="10"/>
+                        </StackPanel>
+
+                        <!-- Noise Calibration -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+                            <Button x:Name="CalibrateBtn" Content="🔇 Hiệu chỉnh tiếng ồn"
+                                    FontSize="11" Padding="8,4"
+                                    Background="Transparent" Foreground="{DynamicResource MutedText}"
+                                    BorderBrush="{DynamicResource MutedText}" BorderThickness="1"
+                                    Cursor="Hand" Click="CalibrateNoise_Click"/>
+                            <TextBlock x:Name="NoiseThresholdText" Text="" 
+                                       Foreground="{DynamicResource MutedText}" FontSize="10"
+                                       VerticalAlignment="Center" Margin="10,0,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- User Answer -->
+                    <Border x:Name="QuizAnswerArea" Visibility="Collapsed" 
+                            Background="{DynamicResource GlassBackground}" CornerRadius="8" Padding="15" Margin="0,0,0,20">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Bạn nói:" Foreground="{DynamicResource SecondaryText}"/>
+                            <TextBlock x:Name="QuizUserAnswer" Text="" FontSize="18" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource PrimaryText}" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Result -->
+                    <Border x:Name="QuizResultArea" Visibility="Collapsed" Margin="0,0,0,20">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock x:Name="QuizResultIcon" Text="" FontSize="64" HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="QuizResultText" Text="" FontSize="18" FontWeight="SemiBold"
+                                       HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                            <TextBlock x:Name="QuizCorrectAnswer" Text="" 
+                                       Foreground="{DynamicResource MutedText}" 
+                                       HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                            <Button Content="Câu tiếp theo ➡️" Style="{DynamicResource PrimaryButton}" 
+                                    Margin="0,15,0,0" Click="QuizNext_Click"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Quiz Controls -->
+                    <WrapPanel HorizontalAlignment="Center" Margin="0,10,0,0">
+                        <Button Content="💡 Gợi ý" Style="{DynamicResource SecondaryButton}" 
+                                Margin="5" Click="QuizHint_Click"/>
+                        <Button Content="⏭️ Bỏ qua" Style="{DynamicResource SecondaryButton}" 
+                                Margin="5" Click="QuizSkip_Click"/>
+                    </WrapPanel>
+
+                    <!-- Score Summary -->
+                    <Border x:Name="QuizScoreSummary" Visibility="Collapsed" Style="{DynamicResource CardStyle}" Margin="0,30,0,0">
+                        <StackPanel HorizontalAlignment="Center" Margin="20">
+                            <TextBlock Text="📊 Kết quả" FontSize="20" FontWeight="Bold" 
+                                       Foreground="{DynamicResource PrimaryText}" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <StackPanel Margin="30,0">
+                                    <TextBlock x:Name="CorrectCount" Text="0" FontSize="48" FontWeight="Bold"
+                                               Foreground="{DynamicResource AccentGreen}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Đúng" Foreground="{DynamicResource MutedText}" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Margin="30,0">
+                                    <TextBlock x:Name="WrongCount" Text="0" FontSize="48" FontWeight="Bold"
+                                               Foreground="{DynamicResource AccentPink}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Sai" Foreground="{DynamicResource MutedText}" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </StackPanel>
+                            <Button Content="🔄 Làm lại" Style="{DynamicResource PrimaryButton}" 
+                                    Margin="0,20,0,0" Click="QuizRestart_Click"/>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </Border>
 

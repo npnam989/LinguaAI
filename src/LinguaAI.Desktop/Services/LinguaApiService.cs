@@ -160,4 +160,41 @@ public class LinguaApiService
             return null;
         }
     }
+
+    /// <summary>
+    /// Transcribe audio to text using AI (Gemini)
+    /// </summary>
+    public async Task<string?> TranscribeAudioAsync(byte[] audioData, string language)
+    {
+        try
+        {
+            AddAuthHeader();
+
+            using var content = new MultipartFormDataContent();
+            var audioContent = new ByteArrayContent(audioData);
+            audioContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("audio/wav");
+            content.Add(audioContent, "audio", "recording.wav");
+            content.Add(new StringContent(language), "language");
+
+            var response = await _httpClient.PostAsync("/api/speech/transcribe", content);
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<TranscribeResult>();
+                return result?.Transcript;
+            }
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
 }
+
+public class TranscribeResult
+{
+    public string Transcript { get; set; } = "";
+    public bool Success { get; set; }
+    public string? Error { get; set; }
+}
+
