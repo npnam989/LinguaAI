@@ -1,99 +1,145 @@
 <Page x:Class="LinguaAI.Desktop.Pages.WritingPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-      Title="WritingPage"
+      Title="Luyện Viết"
       Style="{DynamicResource PageBase}">
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="2*"/>
-            <RowDefinition Height="3*"/>
-        </Grid.RowDefinitions>
-
-        <!-- Back Button & Header -->
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
-            <Button Content="⬅" Padding="10,5" Click="BackButton_Click" Style="{DynamicResource ModernButton}" Width="40"/>
-            <TextBlock Text="Writing Practice" Style="{DynamicResource HeaderTitle}" Margin="20,0,0,20" VerticalAlignment="Center"/>
-        </StackPanel>
-
-        <!-- Input Area -->
-        <Grid Grid.Row="1">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-            
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                <TextBlock Text="Write your text here:" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                <ComboBox x:Name="LevelComboBox" Width="120" Margin="10,0" SelectedIndex="1">
-                    <ComboBoxItem Content="beginner"/>
-                    <ComboBoxItem Content="intermediate"/>
-                    <ComboBoxItem Content="advanced"/>
-                </ComboBox>
+    
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="30">
+            <!-- Header -->
+            <StackPanel HorizontalAlignment="Center" Margin="0,0,0,30">
+                <TextBlock Text="✍️ Luyện Viết" Style="{DynamicResource HeaderTitle}" HorizontalAlignment="Center"/>
+                <TextBlock Text="Viết bài và nhận phản hồi chi tiết từ AI" 
+                           Style="{DynamicResource SubtitleText}" HorizontalAlignment="Center"/>
             </StackPanel>
 
-            <TextBox x:Name="WritingInput" Grid.Row="1" TextWrapping="Wrap" AcceptsReturn="True" 
-                     VerticalScrollBarVisibility="Auto" FontSize="16" Padding="10"
-                     BorderBrush="#e5e7eb" BorderThickness="1"/>
+            <!-- Settings Panel -->
+            <Border Style="{DynamicResource GlassPanel}" Margin="0,0,0,30">
+                <WrapPanel HorizontalAlignment="Left">
+                    <!-- Language Selector -->
+                    <StackPanel Margin="10,5">
+                        <TextBlock Text="Ngôn ngữ" Foreground="{DynamicResource SecondaryText}" FontSize="12" Margin="0,0,0,5"/>
+                        <ComboBox x:Name="LanguageComboBox" Width="150" SelectedIndex="0">
+                            <ComboBoxItem Content="🇰🇷 Tiếng Hàn" Tag="ko"/>
+                            <ComboBoxItem Content="🇨🇳 Tiếng Trung" Tag="zh"/>
+                            <ComboBoxItem Content="🇺🇸 Tiếng Anh" Tag="en"/>
+                        </ComboBox>
+                    </StackPanel>
+                    
+                    <!-- Level Selector -->
+                    <StackPanel Margin="10,5">
+                        <TextBlock Text="Trình độ" Foreground="{DynamicResource SecondaryText}" FontSize="12" Margin="0,0,0,5"/>
+                        <ComboBox x:Name="LevelComboBox" Width="130" SelectedIndex="1">
+                            <ComboBoxItem Content="Sơ cấp" Tag="beginner"/>
+                            <ComboBoxItem Content="Trung cấp" Tag="intermediate"/>
+                            <ComboBoxItem Content="Cao cấp" Tag="advanced"/>
+                        </ComboBox>
+                    </StackPanel>
+                </WrapPanel>
+            </Border>
 
-            <Button x:Name="CheckButton" Grid.Row="2" Content="Check Writing" 
-                    Margin="0,10,0,0" Padding="15,10" HorizontalAlignment="Right"
-                    Background="#2563eb" Foreground="White"
-                    Click="CheckButton_Click"/>
-        </Grid>
+            <!-- 2-Column Layout -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-        <!-- Results Area -->
-        <ScrollViewer Grid.Row="2" Margin="0,20,0,0">
-            <StackPanel>
-                <TextBlock Text="Feedback &amp; Corrections:" FontWeight="Bold" FontSize="18" Margin="0,0,0,10"/>
-                
-                <!-- Corrected Text -->
-                <TextBlock Text="Better Version:" FontWeight="SemiBold" Foreground="#059669" Margin="0,10,0,5"/>
-                <TextBox x:Name="CorrectedText" IsReadOnly="True" TextWrapping="Wrap" 
-                         Background="#f0fdf4" BorderThickness="0" Padding="10" FontSize="16"/>
+                <!-- Input Area -->
+                <Border Style="{DynamicResource CardStyle}" Margin="0,0,15,0">
+                    <StackPanel>
+                        <TextBlock Text="📝 Bài viết của bạn" FontSize="18" FontWeight="Bold" 
+                                   Foreground="{DynamicResource PrimaryText}" Margin="0,0,0,15"/>
+                        <TextBox x:Name="WritingInput" 
+                                 Height="300" TextWrapping="Wrap" AcceptsReturn="True" 
+                                 VerticalScrollBarVisibility="Auto"
+                                 FontSize="15" Padding="12"
+                                 Background="{DynamicResource InputBackground}"
+                                 Foreground="{DynamicResource PrimaryText}"
+                                 BorderBrush="{DynamicResource Border}"/>
+                        <Button x:Name="CheckButton" Content="✨ Kiểm tra bài viết" 
+                                Style="{DynamicResource PrimaryButton}" Margin="0,15,0,0"
+                                HorizontalAlignment="Stretch"
+                                Click="CheckButton_Click"/>
+                    </StackPanel>
+                </Border>
 
-                <!-- Detailed Corrections -->
-                <TextBlock Text="Detailed Improvements:" FontWeight="SemiBold" Margin="0,15,0,5"/>
-                <ItemsControl x:Name="CorrectionsList">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Background="White" BorderBrush="#e5e7eb" BorderThickness="1" Margin="0,4" Padding="10" CornerRadius="4">
-                                <StackPanel>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding Original}" TextDecorations="Strikethrough" Foreground="#dc2626" Margin="0,0,10,0"/>
-                                        <TextBlock Text="➜" Foreground="#6b7280" Margin="0,0,10,0"/>
-                                        <TextBlock Text="{Binding Corrected}" FontWeight="Bold" Foreground="#059669"/>
+                <!-- Result Area -->
+                <Border Grid.Column="1" Style="{DynamicResource CardStyle}">
+                    <StackPanel>
+                        <TextBlock Text="📊 Kết quả phân tích" FontSize="18" FontWeight="Bold" 
+                                   Foreground="{DynamicResource PrimaryText}" Margin="0,0,0,15"/>
+
+                        <!-- Loading -->
+                        <StackPanel x:Name="LoadingPanel" Visibility="Collapsed" HorizontalAlignment="Center" Margin="0,50">
+                            <ProgressBar IsIndeterminate="True" Width="150" Height="4" Foreground="{DynamicResource Primary}"/>
+                            <TextBlock Text="Đang phân tích..." Foreground="{DynamicResource MutedText}" 
+                                       HorizontalAlignment="Center" Margin="0,15,0,0"/>
+                        </StackPanel>
+
+                        <!-- Results -->
+                        <ScrollViewer x:Name="ResultPanel" Visibility="Collapsed" MaxHeight="350" VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <!-- Corrected Text -->
+                                <Border Background="{DynamicResource GlassBackground}" CornerRadius="8" Padding="12" Margin="0,0,0,15">
+                                    <StackPanel>
+                                        <TextBlock Text="✅ Bản sửa" FontWeight="SemiBold" 
+                                                   Foreground="{DynamicResource AccentGreen}" Margin="0,0,0,8"/>
+                                        <TextBlock x:Name="CorrectedText" TextWrapping="Wrap" 
+                                                   Foreground="{DynamicResource SecondaryText}" FontSize="14"/>
                                     </StackPanel>
-                                    <TextBlock Text="{Binding Explanation}" Foreground="#4b5563" Margin="0,4,0,0" FontStyle="Italic"/>
-                                </StackPanel>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                                </Border>
 
-                <!-- Suggestions -->
-                <TextBlock Text="Suggestions:" FontWeight="SemiBold" Margin="0,15,0,5"/>
-                <ItemsControl x:Name="SuggestionsList">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Foreground="#4b5563" Margin="0,2" TextWrapping="Wrap">
-                                <TextBlock.Text>
-                                    <MultiBinding StringFormat="• {0}">
-                                        <Binding Path="."/>
-                                    </MultiBinding>
-                                </TextBlock.Text>
-                            </TextBlock>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                                <!-- Corrections List -->
+                                <TextBlock Text="🔍 Chi tiết lỗi" FontWeight="SemiBold" 
+                                           Foreground="{DynamicResource AccentGold}" Margin="0,0,0,10"/>
+                                <ItemsControl x:Name="CorrectionsList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{DynamicResource SurfaceBackground}" 
+                                                    Padding="10" CornerRadius="6" Margin="0,0,0,8">
+                                                <StackPanel>
+                                                    <StackPanel Orientation="Horizontal" TextBlock.LineHeight="20">
+                                                        <TextBlock Text="{Binding Original}" TextDecorations="Strikethrough" 
+                                                                   Foreground="{DynamicResource Error}" Margin="0,0,8,0"/>
+                                                        <TextBlock Text="➜" Foreground="{DynamicResource MutedText}" Margin="0,0,8,0"/>
+                                                        <TextBlock Text="{Binding Corrected}" FontWeight="Bold" 
+                                                                   Foreground="{DynamicResource AccentGreen}"/>
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding Explanation}" 
+                                                               Foreground="{DynamicResource SecondaryText}" 
+                                                               FontStyle="Italic" FontSize="12" Margin="0,5,0,0"
+                                                               TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
 
-            </StackPanel>
-        </ScrollViewer>
-        
-        <ProgressBar x:Name="LoadingBar" Grid.RowSpan="3" IsIndeterminate="True" Visibility="Collapsed" VerticalAlignment="Center" HorizontalAlignment="Center" Width="200" Height="20"/>
+                                <!-- Suggestions -->
+                                <TextBlock Text="💡 Gợi ý cải thiện" FontWeight="SemiBold" 
+                                           Foreground="{DynamicResource PrimaryLight}" Margin="0,15,0,10"/>
+                                <ItemsControl x:Name="SuggestionsList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Foreground="{DynamicResource SecondaryText}" 
+                                                       Margin="0,2" TextWrapping="Wrap" FontSize="13">
+                                                <Run Text="• "/><Run Text="{Binding Mode=OneWay}"/>
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </ScrollViewer>
 
-    </Grid>
+                        <!-- Empty State -->
+                        <StackPanel x:Name="EmptyState" HorizontalAlignment="Center" Margin="0,50">
+                            <TextBlock Text="Viết bài và nhấn &quot;Kiểm tra&quot; để nhận phản hồi" 
+                                       Foreground="{DynamicResource MutedText}" TextAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
 </Page>

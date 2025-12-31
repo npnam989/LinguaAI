@@ -13,56 +13,32 @@ public partial class App : System.Windows.Application
 
         try 
         {
-            // 1. Generate Ephemeral Credentials for this session
-            // This ensures the API Key is never stored on disk and changes every run.
-            // "Config trực tiếp trong ứng dụng" -> Configured dynamically in memory.
-            string userId = "desktop_user_" + Guid.NewGuid().ToString("N").Substring(0, 8);
-            string apiKey = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N"); // Strong random key
+            // 1. Get obfuscated credentials for Railway API
+            var (userId, apiKey) = Services.CredentialProtector.GetCredentials();
+            
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(apiKey))
+            {
+                System.Windows.MessageBox.Show("API credentials not configured. Please contact support.", "Configuration Error");
+                Shutdown();
+                return;
+            }
 
-            // 2. Inject into Environment for the API Host to pick up (via IConfiguration)
+            // 2. Inject into Environment for the API service to use
             Environment.SetEnvironmentVariable("Auth__UserId", userId);
             Environment.SetEnvironmentVariable("Auth__ApiKey", apiKey);
 
-            // 3. Find a free port dynamically to avoid "Address already in use"
-            int port = GetAvailablePort();
-            string url = $"http://localhost:{port}";
-            
-            // 4. Update Client Configuration
-            Services.LinguaApiService.BaseUrl = url;
-
-            // 5. Start API on the dynamic port
-            var args = new[] { $"--urls={url}" };
-            
-            // Create and start the API host
-            // Use LinguaAI.Api.Program.CreateApp
-            var app = LinguaAI.Api.Program.CreateApp(args);
-            _apiHost = app;
-            
-            await app.StartAsync();
+            // 3. Railway API URL (no local API needed)
+            // Note: We don't start a local API host when using Railway
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"Failed to start API: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            System.Windows.MessageBox.Show($"Failed to initialize: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             Shutdown();
         }
     }
 
-    private int GetAvailablePort()
+    protected override void OnExit(ExitEventArgs e)
     {
-        using (var socket = new System.Net.Sockets.Socket(System.Net.Sockets.AddressFamily.InterNetwork, System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp))
-        {
-            socket.Bind(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 0));
-            return ((System.Net.IPEndPoint)socket.LocalEndPoint!).Port;
-        }
-    }
-
-    protected override async void OnExit(ExitEventArgs e)
-    {
-        if (_apiHost != null)
-        {
-            await _apiHost.StopAsync();
-            _apiHost.Dispose();
-        }
         base.OnExit(e);
     }
 }

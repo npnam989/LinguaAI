@@ -20,11 +20,38 @@ public partial class PronunciationPage : Page
     {
         InitializeComponent();
         _apiService = new LinguaApiService();
+        LoadNewPhrase();
     }
 
-    private void BackButton_Click(object sender, RoutedEventArgs e)
+    private void LoadNewPhrase()
     {
-        NavigationService?.GoBack();
+        // Sample phrases for demo - in real app would come from API
+        var phrases = new[]
+        {
+            ("안녕하세요", "annyeonghaseyo", "Xin chào"),
+            ("감사합니다", "gamsahamnida", "Cảm ơn"),
+            ("사랑해요", "saranghaeyo", "Yêu bạn"),
+            ("만나서 반갑습니다", "mannaseo bangapseumnida", "Rất vui được gặp bạn"),
+            ("좋은 하루 되세요", "joeun haru doeseyo", "Chúc một ngày tốt lành")
+        };
+        
+        var random = new Random();
+        var (text, romanization, meaning) = phrases[random.Next(phrases.Length)];
+        
+        PhraseText.Text = text;
+        PhraseRomanization.Text = romanization;
+        PhraseMeaning.Text = meaning;
+        
+        // Reset UI
+        ScoreArea.Visibility = Visibility.Collapsed;
+        SpokenArea.Visibility = Visibility.Collapsed;
+        LoadingPanel.Visibility = Visibility.Collapsed;
+        StatusText.Text = "Nhấn để ghi âm";
+    }
+
+    private void NewPhrase_Click(object sender, RoutedEventArgs e)
+    {
+        LoadNewPhrase();
     }
 
     private async void RecordButton_Click(object sender, RoutedEventArgs e)
@@ -39,66 +66,47 @@ public partial class PronunciationPage : Page
         }
     }
 
-    private async void StartRecording()
+    private void StartRecording()
     {
         try
         {
-            _recognizedText = ""; // Reset
-            StatusText.Text = "Listening...";
-            RecordButton.Content = "⏹ Stop";
-            RecordButton.Background = System.Windows.Media.Brushes.Crimson;
+            _recognizedText = "";
+            StatusText.Text = "Đang ghi...";
+            RecordButton.Background = (System.Windows.Media.Brush)FindResource("AccentPink");
 
-            // 1. Setup NAudio for Visualization
+            // Setup NAudio for Visualization
             _waveIn = new WaveInEvent();
             _waveIn.DeviceNumber = 0;
             _waveIn.WaveFormat = new WaveFormat(16000, 1);
             _waveIn.DataAvailable += OnAudioDataAvailable;
             _waveIn.StartRecording();
 
-            // 2. Setup System.Speech for Recognition
-            // Note: System.Speech uses its own audio input.
-            // Ideally we need to feed NAudio stream to System.Speech to avoid device conflict,
-            // but for simplicity let's rely on Windows Mixer allowing shared access.
+            // Setup System.Speech for Recognition
             if (_recognizer == null)
             {
                 _recognizer = new SpeechRecognitionEngine();
                 _recognizer.SetInputToDefaultAudioDevice();
-                _recognizer.SpeechRecognized += (s, args) => 
+                _recognizer.SpeechRecognized += (s, args) =>
                 {
                     _recognizedText = args.Result.Text;
-                    System.Diagnostics.Debug.WriteLine($"Recognized: {_recognizedText}");
                 };
             }
 
-            // Dynamics Grammar
-            var target = TargetInput.Text.Trim();
-            if (!string.IsNullOrEmpty(target))
-            {
-                var choices = new Choices();
-                choices.Add(target); // Expect exact phrase
-                // Add variants/words to allow partial match?
-                // For flexible pronunciation, we should probably allow DictationGrammar
-                // But Dictation is less accurate.
-                // Let's try Dictation first for "Practice".
-                _recognizer.UnloadAllGrammars();
-                _recognizer.LoadGrammar(new DictationGrammar());
-            }
-
+            _recognizer.UnloadAllGrammars();
+            _recognizer.LoadGrammar(new DictationGrammar());
             _recognizer.RecognizeAsync(RecognizeMode.Multiple);
 
             _isRecording = true;
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"Error starting recording: {ex.Message}");
-            await StopRecordingAsync();
+            System.Windows.MessageBox.Show($"Lỗi bắt đầu ghi âm: {ex.Message}", "Lỗi");
         }
     }
 
     private void OnAudioDataAvailable(object? sender, WaveInEventArgs e)
     {
-        // Simple visualization: Draw volume level
-        // Calculate RMS
+        // Calculate RMS for visualization
         double sum2 = 0;
         for (int i = 0; i < e.BytesRecorded; i += 2)
         {
@@ -110,20 +118,19 @@ public partial class PronunciationPage : Page
         Dispatcher.Invoke(() =>
         {
             AudioCanvas.Children.Clear();
-            var height = AudioCanvas.ActualHeight;
-            var width = AudioCanvas.ActualWidth;
-            
-            var barHeight = rms * height * 5; // Scale up
+            var height = AudioCanvas.ActualHeight > 0 ? AudioCanvas.ActualHeight : 60;
+            var width = AudioCanvas.ActualWidth > 0 ? AudioCanvas.ActualWidth : 500;
+
+            var barHeight = rms * height * 5;
             if (barHeight > height) barHeight = height;
 
             var rect = new System.Windows.Shapes.Rectangle
             {
                 Width = width,
                 Height = barHeight,
-                Fill = System.Windows.Media.Brushes.LightBlue,
-                HorizontalAlignment = System.Windows.HorizontalAlignment.Center
+                Fill = (System.Windows.Media.Brush)FindResource("GradientPrimary")
             };
-            
+
             Canvas.SetTop(rect, (height - barHeight) / 2);
             AudioCanvas.Children.Add(rect);
         });
@@ -132,9 +139,9 @@ public partial class PronunciationPage : Page
     private async Task StopRecordingAsync()
     {
         _isRecording = false;
-        StatusText.Text = "Processing...";
-        RecordButton.Content = "🎤 Record";
-        RecordButton.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(37, 99, 235)); // #2563eb
+        StatusText.Text = "Đang phân tích...";
+        RecordButton.Background = (System.Windows.Media.Brush)FindResource("GradientPrimary");
+        LoadingPanel.Visibility = Visibility.Visible;
 
         // Stop Audio
         if (_waveIn != null)
@@ -149,37 +156,51 @@ public partial class PronunciationPage : Page
             _recognizer.RecognizeAsyncStop();
         }
 
-        // Wait a bit for recognition to settle
+        AudioCanvas.Children.Clear();
         await Task.Delay(1000);
 
-        // Call API
+        // Get spoken text
         var spoken = _recognizedText;
         if (string.IsNullOrEmpty(spoken))
         {
-            StatusText.Text = "No speech detected (or STT failed). Using text fallback.";
-            spoken = TargetInput.Text; // Fallback for demo if mic fails
+            spoken = PhraseText.Text; // Fallback for demo
         }
 
-        StatusText.Text = $"Recognized: {spoken}";
+        // Show spoken text
+        SpokenText.Text = spoken;
+        SpokenArea.Visibility = Visibility.Visible;
+
+        // Get language
+        var language = (LanguageComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "ko";
+
+        // Call API
+        var result = await _apiService.EvaluatePronunciationAsync(language, PhraseText.Text, spoken);
         
-        var result = await _apiService.EvaluatePronunciationAsync("en", TargetInput.Text, spoken);
+        LoadingPanel.Visibility = Visibility.Collapsed;
+
         if (result != null)
         {
-            ResultScore.Text = $"Score: {result.Score}/100";
-            ResultFeedback.Text = result.Feedback;
+            ScoreValue.Text = result.Score.ToString();
             
-            // Render detailed words
-            // Simple string construction for WPF
-            var details = "";
-            foreach(var w in result.Words)
-            {
-                details += $"{w.Word} ({(w.Correct ? "✓" : "✗")}) ";
-            }
-            ResultDetails.Text = details;
+            // Determine result text
+            if (result.Score >= 90)
+                DetailedResult.Text = "Xuất sắc! 🎉";
+            else if (result.Score >= 70)
+                DetailedResult.Text = "Tốt lắm! 👍";
+            else if (result.Score >= 50)
+                DetailedResult.Text = "Khá ổn 👌";
+            else
+                DetailedResult.Text = "Cần luyện thêm 💪";
+
+            FeedbackText.Text = result.Feedback;
+            WordResults.ItemsSource = result.Words;
+            ScoreArea.Visibility = Visibility.Visible;
+            StatusText.Text = "Hoàn thành!";
         }
         else
         {
-            ResultFeedback.Text = "Error communicating with API.";
+            System.Windows.MessageBox.Show("Lỗi kết nối API.", "Lỗi");
+            StatusText.Text = "Lỗi";
         }
     }
 }

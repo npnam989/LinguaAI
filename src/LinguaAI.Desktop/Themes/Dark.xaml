@@ -1,15 +1,88 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <SolidColorBrush x:Key="PageBackground" Color="#111827"/>
-    <SolidColorBrush x:Key="SurfaceBackground" Color="#1f2937"/>
-    <SolidColorBrush x:Key="PrimaryText" Color="#f9fafb"/>
-    <SolidColorBrush x:Key="SecondaryText" Color="#9ca3af"/>
-    <SolidColorBrush x:Key="AccentColor" Color="#3b82f6"/>
-    <SolidColorBrush x:Key="AccentForeground" Color="#ffffff"/>
-    <SolidColorBrush x:Key="Border" Color="#374151"/>
-    <SolidColorBrush x:Key="Hover" Color="#374151"/>
-    <SolidColorBrush x:Key="Success" Color="#34d399"/>
+    
+    <!-- ============================================
+         LinguaAI Desktop - Premium Dark Theme
+         Matching Web CSS Variables
+         ============================================ -->
+    
+    <!-- Primary Colors (Purple Gradient Base) -->
+    <Color x:Key="PrimaryColor">#7c5cff</Color>
+    <Color x:Key="PrimaryLightColor">#a78bfa</Color>
+    <Color x:Key="PrimaryDarkColor">#5b3cc4</Color>
+    <SolidColorBrush x:Key="Primary" Color="{StaticResource PrimaryColor}"/>
+    <SolidColorBrush x:Key="PrimaryLight" Color="{StaticResource PrimaryLightColor}"/>
+    <SolidColorBrush x:Key="PrimaryDark" Color="{StaticResource PrimaryDarkColor}"/>
+    
+    <!-- Accent Colors -->
+    <Color x:Key="AccentPinkColor">#e84393</Color>
+    <Color x:Key="AccentCyanColor">#00cec9</Color>
+    <Color x:Key="AccentGoldColor">#f1c40f</Color>
+    <Color x:Key="AccentGreenColor">#2ecc71</Color>
+    <SolidColorBrush x:Key="AccentPink" Color="{StaticResource AccentPinkColor}"/>
+    <SolidColorBrush x:Key="AccentCyan" Color="{StaticResource AccentCyanColor}"/>
+    <SolidColorBrush x:Key="AccentGold" Color="{StaticResource AccentGoldColor}"/>
+    <SolidColorBrush x:Key="AccentGreen" Color="{StaticResource AccentGreenColor}"/>
+    
+    <!-- Language Colors -->
+    <SolidColorBrush x:Key="LangKorean" Color="#e84118"/>
+    <SolidColorBrush x:Key="LangChinese" Color="#f39c12"/>
+    <SolidColorBrush x:Key="LangEnglish" Color="#3498db"/>
+    
+    <!-- Background Colors -->
+    <Color x:Key="BgDarkColor">#0d0f17</Color>
+    <Color x:Key="BgCardColor">#14171f</Color>
+    <Color x:Key="BgCardHoverColor">#1c2029</Color>
+    <Color x:Key="BgGlassColor">#1a1d2680</Color>
+    <SolidColorBrush x:Key="PageBackground" Color="{StaticResource BgDarkColor}"/>
+    <SolidColorBrush x:Key="SurfaceBackground" Color="{StaticResource BgCardColor}"/>
+    <SolidColorBrush x:Key="CardHover" Color="{StaticResource BgCardHoverColor}"/>
+    <SolidColorBrush x:Key="GlassBackground" Color="{StaticResource BgGlassColor}"/>
+    
+    <!-- Border Colors -->
+    <Color x:Key="BorderGlassColor">#ffffff19</Color>
+    <SolidColorBrush x:Key="Border" Color="{StaticResource BorderGlassColor}"/>
+    <SolidColorBrush x:Key="BorderHover" Color="{StaticResource PrimaryColor}"/>
+    
+    <!-- Text Colors -->
+    <Color x:Key="TextPrimaryColor">#fafafa</Color>
+    <Color x:Key="TextSecondaryColor">#a3a8b8</Color>
+    <Color x:Key="TextMutedColor">#6b7280</Color>
+    <SolidColorBrush x:Key="PrimaryText" Color="{StaticResource TextPrimaryColor}"/>
+    <SolidColorBrush x:Key="SecondaryText" Color="{StaticResource TextSecondaryColor}"/>
+    <SolidColorBrush x:Key="MutedText" Color="{StaticResource TextMutedColor}"/>
+    
+    <!-- Status Colors -->
+    <SolidColorBrush x:Key="Success" Color="#2ecc71"/>
     <SolidColorBrush x:Key="SuccessBackground" Color="#064e3b"/>
-    <SolidColorBrush x:Key="Error" Color="#f87171"/>
-    <SolidColorBrush x:Key="InputBackground" Color="#374151"/>
+    <SolidColorBrush x:Key="Error" Color="#e74c3c"/>
+    <SolidColorBrush x:Key="ErrorBackground" Color="#7f1d1d"/>
+    <SolidColorBrush x:Key="Warning" Color="#f39c12"/>
+    
+    <!-- Input Colors -->
+    <SolidColorBrush x:Key="InputBackground" Color="{StaticResource BgCardColor}"/>
+    <SolidColorBrush x:Key="InputFocusBorder" Color="{StaticResource PrimaryColor}"/>
+    
+    <!-- Gradient Brushes -->
+    <LinearGradientBrush x:Key="GradientPrimary" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="{StaticResource PrimaryColor}" Offset="0"/>
+        <GradientStop Color="{StaticResource AccentPinkColor}" Offset="1"/>
+    </LinearGradientBrush>
+    
+    <LinearGradientBrush x:Key="GradientHero" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#1a1625" Offset="0"/>
+        <GradientStop Color="#140f1a" Offset="0.5"/>
+        <GradientStop Color="{StaticResource BgDarkColor}" Offset="1"/>
+    </LinearGradientBrush>
+    
+    <LinearGradientBrush x:Key="GradientCard" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="{StaticResource BgCardColor}" Offset="0"/>
+        <GradientStop Color="#10131a" Offset="1"/>
+    </LinearGradientBrush>
+    
+    <!-- Legacy Keys for Compatibility -->
+    <SolidColorBrush x:Key="AccentColor" Color="{StaticResource PrimaryColor}"/>
+    <SolidColorBrush x:Key="AccentForeground" Color="#ffffff"/>
+    <SolidColorBrush x:Key="Hover" Color="{StaticResource BgCardHoverColor}"/>
+    
 </ResourceDictionary>

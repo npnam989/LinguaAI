@@ -1,54 +1,102 @@
 <Page x:Class="LinguaAI.Desktop.Pages.ConversationPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-      Title="ConversationPage"
+      Title="Luyện Giao Tiếp"
       Style="{DynamicResource PageBase}">
-    <Grid Margin="20">
+    
+    <Grid Margin="30">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
-            <Button Content="⬅" Padding="10,5" Click="BackButton_Click" Style="{DynamicResource ModernButton}" Width="40"/>
-            <TextBlock Text="Conversation Practice" Style="{DynamicResource HeaderTitle}" Margin="20,0,0,20" VerticalAlignment="Center"/>
-            <ComboBox x:Name="ScenarioComboBox" Width="150" Margin="20,0,0,0" SelectedIndex="0" VerticalAlignment="Center">
-                <ComboBoxItem Content="General Chat"/>
-                <ComboBoxItem Content="Restaurant"/>
-                <ComboBoxItem Content="Travel"/>
-                <ComboBoxItem Content="Shopping"/>
-            </ComboBox>
+        <StackPanel HorizontalAlignment="Center" Margin="0,0,0,20">
+            <TextBlock Text="💬 Luyện Giao Tiếp" Style="{DynamicResource HeaderTitle}" HorizontalAlignment="Center"/>
+            <TextBlock Text="Trò chuyện với AI trong các tình huống thực tế" 
+                       Style="{DynamicResource SubtitleText}" HorizontalAlignment="Center"/>
         </StackPanel>
 
-        <!-- Chat History -->
-        <Border Grid.Row="1" BorderBrush="#e5e7eb" BorderThickness="1" CornerRadius="4" Padding="10">
-            <ScrollViewer x:Name="ChatScrollViewer">
-                <StackPanel x:Name="ChatPanel"/>
+        <!-- Settings Panel -->
+        <Border Grid.Row="1" Style="{DynamicResource GlassPanel}" Margin="0,0,0,20">
+            <WrapPanel HorizontalAlignment="Left">
+                <!-- Language Selector -->
+                <StackPanel Margin="10,5">
+                    <TextBlock Text="Ngôn ngữ" Foreground="{DynamicResource SecondaryText}" FontSize="12" Margin="0,0,0,5"/>
+                    <ComboBox x:Name="LanguageComboBox" Width="150" SelectedIndex="0">
+                        <ComboBoxItem Content="🇰🇷 Tiếng Hàn" Tag="ko"/>
+                        <ComboBoxItem Content="🇨🇳 Tiếng Trung" Tag="zh"/>
+                        <ComboBoxItem Content="🇺🇸 Tiếng Anh" Tag="en"/>
+                    </ComboBox>
+                </StackPanel>
+                
+                <!-- Scenario Selector -->
+                <StackPanel Margin="10,5">
+                    <TextBlock Text="Kịch bản" Foreground="{DynamicResource SecondaryText}" FontSize="12" Margin="0,0,0,5"/>
+                    <ComboBox x:Name="ScenarioComboBox" Width="160" SelectedIndex="0">
+                        <ComboBoxItem Content="☕ Quán cà phê" Tag="coffee"/>
+                        <ComboBoxItem Content="🍽️ Nhà hàng" Tag="restaurant"/>
+                        <ComboBoxItem Content="🛍️ Mua sắm" Tag="shopping"/>
+                        <ComboBoxItem Content="✈️ Du lịch" Tag="travel"/>
+                        <ComboBoxItem Content="💼 Công việc" Tag="work"/>
+                        <ComboBoxItem Content="🏠 Đời thường" Tag="daily"/>
+                        <ComboBoxItem Content="🎯 Phỏng vấn" Tag="interview"/>
+                    </ComboBox>
+                </StackPanel>
+                
+                <Button Content="🔄 Cuộc hội thoại mới" 
+                        Style="{DynamicResource SecondaryButton}" Margin="10,5"
+                        VerticalAlignment="Bottom"
+                        Click="NewConversation_Click"/>
+            </WrapPanel>
+        </Border>
+
+        <!-- Chat Area -->
+        <Border Grid.Row="2" Style="{DynamicResource GlassPanel}" Padding="15">
+            <ScrollViewer x:Name="ChatScrollViewer" VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="ChatPanel">
+                    <!-- Welcome Message -->
+                    <Border Style="{DynamicResource ChatMessageAI}">
+                        <TextBlock Text="Xin chào! Hãy chọn ngôn ngữ và kịch bản, sau đó bắt đầu trò chuyện nhé! 👋" 
+                                   Foreground="{DynamicResource PrimaryText}" TextWrapping="Wrap"/>
+                    </Border>
+                </StackPanel>
             </ScrollViewer>
         </Border>
 
         <!-- Input Area -->
-        <Grid Grid.Row="2" Margin="0,20,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+        <Border Grid.Row="3" Style="{DynamicResource GlassPanel}" Margin="0,15,0,0" Padding="10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-            <TextBox x:Name="MessageInput" FontSize="16" Padding="10" 
-                     KeyDown="MessageInput_KeyDown" VerticalContentAlignment="Center"/>
-            
-            <Button x:Name="MicButton" Grid.Column="1" Content="🎤" Width="50" Margin="10,0"
-                    Background="#f3f4f6"  FontSize="20"
-                    Click="MicButton_Click"/>
-            
-            <Button x:Name="SendButton" Grid.Column="2" Content="Send" Padding="20,10"
-                    Background="#2563eb" Foreground="White" FontWeight="Bold"
-                    Click="SendButton_Click"/>
-        </Grid>
+                <TextBox x:Name="MessageInput" 
+                         FontSize="15" Padding="12,10"
+                         Background="{DynamicResource InputBackground}"
+                         Foreground="{DynamicResource PrimaryText}"
+                         BorderBrush="{DynamicResource Border}"
+                         BorderThickness="1"
+                         KeyDown="MessageInput_KeyDown">
+                    <TextBox.Template>
+                        <ControlTemplate TargetType="TextBox">
+                            <Border Background="{TemplateBinding Background}" 
+                                    BorderBrush="{TemplateBinding BorderBrush}" 
+                                    BorderThickness="{TemplateBinding BorderThickness}" 
+                                    CornerRadius="8">
+                                <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"/>
+                            </Border>
+                        </ControlTemplate>
+                    </TextBox.Template>
+                </TextBox>
+                
+                <Button Grid.Column="1" Content="Gửi" 
+                        Style="{DynamicResource PrimaryButton}" Margin="10,0,0,0"
+                        Click="SendButton_Click"/>
+            </Grid>
+        </Border>
     </Grid>
 </Page>

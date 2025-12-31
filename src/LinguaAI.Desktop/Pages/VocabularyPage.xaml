@@ -1,54 +1,177 @@
 <Page x:Class="LinguaAI.Desktop.Pages.VocabularyPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-      Title="VocabularyPage"
+      Title="Học Từ Vựng"
       Style="{DynamicResource PageBase}">
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="150"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-
-        <!-- Back Button & Header -->
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
-            <Button Content="⬅" Padding="10,5" Click="BackButton_Click" Style="{DynamicResource ModernButton}" Width="40"/>
-            <TextBlock Text="Vocabulary Practice" Style="{DynamicResource HeaderTitle}" Margin="20,0,0,20" VerticalAlignment="Center"/>
-        </StackPanel>
-
-        <!-- Configuration -->
-        <Border Grid.Row="1" Background="#f3f4f6" Padding="15" CornerRadius="8">
-            <StackPanel>
-                <TextBlock Text="Choose a Theme:" FontWeight="SemiBold" Margin="0,0,0,10"/>
-                <ComboBox x:Name="ThemeComboBox" DisplayMemberPath="Name" SelectedValuePath="Id" Height="35" FontSize="14"/>
-                
-                <Button x:Name="GenerateButton" Content="Generate Vocabulary" 
-                        Margin="0,20,0,0" Padding="15,8" HorizontalAlignment="Left"
-                        Background="#2563eb" Foreground="White"
-                        Click="GenerateButton_Click"/>
+    
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="30">
+            <!-- Header -->
+            <StackPanel HorizontalAlignment="Center" Margin="0,0,0,30">
+                <TextBlock Text="📚 Học Từ Vựng" Style="{DynamicResource HeaderTitle}" HorizontalAlignment="Center"/>
+                <TextBlock Text="Học từ mới theo chủ đề hoặc tải danh sách từ file" 
+                           Style="{DynamicResource SubtitleText}" HorizontalAlignment="Center"/>
             </StackPanel>
-        </Border>
 
-        <!-- Results List -->
-        <ListView x:Name="VocabularyList" Grid.Row="2" Margin="0,20,0,0" BorderThickness="0">
-            <ListView.ItemTemplate>
-                <DataTemplate>
-                    <Border Background="White" BorderBrush="#e5e7eb" BorderThickness="1" Margin="0,4" Padding="10" CornerRadius="4">
-                        <StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{Binding Word}" FontWeight="Bold" FontSize="16" Foreground="#111827"/>
-                                <TextBlock Text="{Binding Pronunciation}" FontStyle="Italic" Foreground="#6b7280" Margin="10,0,0,0" VerticalAlignment="Center"/>
-                            </StackPanel>
-                            <TextBlock Text="{Binding Meaning}" Foreground="#4b5563" Margin="0,4"/>
-                            <TextBlock Text="{Binding Example}" Foreground="#6b7280" FontSize="13" TextWrapping="Wrap"/>
+            <!-- Settings Panel -->
+            <Border Style="{DynamicResource GlassPanel}" Margin="0,0,0,30">
+                <StackPanel>
+                    <WrapPanel HorizontalAlignment="Center" Margin="0,0,0,15">
+                        <!-- Language Selector -->
+                        <StackPanel Margin="10,5">
+                            <TextBlock Text="Ngôn ngữ" Foreground="{DynamicResource SecondaryText}" FontSize="12" Margin="0,0,0,5"/>
+                            <ComboBox x:Name="LanguageComboBox" Width="150" SelectedIndex="0">
+                                <ComboBoxItem Content="🇰🇷 Tiếng Hàn" Tag="ko"/>
+                                <ComboBoxItem Content="🇨🇳 Tiếng Trung" Tag="zh"/>
+                                <ComboBoxItem Content="🇺🇸 Tiếng Anh" Tag="en"/>
+                            </ComboBox>
+                        </StackPanel>
+                        
+                        <!-- Theme Selector -->
+                        <StackPanel Margin="10,5">
+                            <TextBlock Text="Chủ đề" Foreground="{DynamicResource SecondaryText}" FontSize="12" Margin="0,0,0,5"/>
+                            <ComboBox x:Name="ThemeComboBox" Width="180" SelectedIndex="0">
+                                <ComboBoxItem Content="👋 Chào hỏi" Tag="greetings"/>
+                                <ComboBoxItem Content="🔢 Số đếm" Tag="numbers"/>
+                                <ComboBoxItem Content="🍕 Đồ ăn" Tag="food"/>
+                                <ComboBoxItem Content="👨‍👩‍👧‍👦 Gia đình" Tag="family"/>
+                                <ComboBoxItem Content="🎨 Màu sắc" Tag="colors"/>
+                                <ComboBoxItem Content="🐾 Động vật" Tag="animals"/>
+                                <ComboBoxItem Content="🌤️ Thời tiết" Tag="weather"/>
+                                <ComboBoxItem Content="🛒 Mua sắm" Tag="shopping"/>
+                                <ComboBoxItem Content="🧳 Du lịch" Tag="travel"/>
+                                <ComboBoxItem Content="💼 Công việc" Tag="work"/>
+                            </ComboBox>
+                        </StackPanel>
+                        
+                        <!-- Word Count -->
+                        <StackPanel Margin="10,5">
+                            <TextBlock Text="Số từ" Foreground="{DynamicResource SecondaryText}" FontSize="12" Margin="0,0,0,5"/>
+                            <ComboBox x:Name="CountComboBox" Width="80" SelectedIndex="1">
+                                <ComboBoxItem Content="5" Tag="5"/>
+                                <ComboBoxItem Content="10" Tag="10"/>
+                                <ComboBoxItem Content="15" Tag="15"/>
+                                <ComboBoxItem Content="20" Tag="20"/>
+                            </ComboBox>
+                        </StackPanel>
+                    </WrapPanel>
+                    
+                    <!-- Generate Button -->
+                    <Button x:Name="GenerateButton" Content="📚 Tải từ AI" 
+                            Style="{DynamicResource PrimaryButton}"
+                            HorizontalAlignment="Center" Margin="0,10,0,0"
+                            Click="GenerateButton_Click"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Loading -->
+            <Border x:Name="LoadingPanel" Visibility="Collapsed" Margin="0,30">
+                <StackPanel HorizontalAlignment="Center">
+                    <ProgressBar IsIndeterminate="True" Width="200" Height="4" Foreground="{DynamicResource Primary}"/>
+                    <TextBlock Text="Đang xử lý..." Foreground="{DynamicResource MutedText}" 
+                               HorizontalAlignment="Center" Margin="0,15,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Mode Selection (visible after loading) -->
+            <WrapPanel x:Name="ModePanel" Visibility="Collapsed" HorizontalAlignment="Center" Margin="0,0,0,30">
+                <Button x:Name="FlashcardModeBtn" Content="🃏 Flashcard" 
+                        Style="{DynamicResource PrimaryButton}" Margin="5"
+                        Click="FlashcardMode_Click"/>
+                <Button x:Name="ListModeBtn" Content="📋 Danh sách" 
+                        Style="{DynamicResource SecondaryButton}" Margin="5"
+                        Click="ListMode_Click"/>
+            </WrapPanel>
+
+            <!-- Flashcard Area -->
+            <Border x:Name="FlashcardArea" Visibility="Collapsed" Margin="0,20">
+                <StackPanel HorizontalAlignment="Center">
+                    <!-- Progress -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20">
+                        <TextBlock x:Name="CurrentIndexText" Text="1" FontSize="24" FontWeight="Bold" 
+                                   Foreground="{DynamicResource PrimaryLight}"/>
+                        <TextBlock Text=" / " FontSize="24" Foreground="{DynamicResource MutedText}"/>
+                        <TextBlock x:Name="TotalCountText" Text="10" FontSize="24" Foreground="{DynamicResource MutedText}"/>
+                    </StackPanel>
+
+                    <!-- Flashcard -->
+                    <Border x:Name="Flashcard" Style="{DynamicResource FlashcardFront}" 
+                            Width="400" Height="280" Cursor="Hand"
+                            MouseLeftButtonDown="Flashcard_Click">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <TextBlock x:Name="CardWord" Text="" FontSize="32" FontWeight="Bold" 
+                                       Foreground="White" HorizontalAlignment="Center" TextWrapping="Wrap"/>
+                            <TextBlock x:Name="CardPronunciation" Text="" FontSize="16" 
+                                       Foreground="#ffffffcc" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                            <TextBlock x:Name="CardMeaning" Text="" FontSize="18" Visibility="Collapsed"
+                                       Foreground="{DynamicResource PrimaryLight}" HorizontalAlignment="Center" 
+                                       TextWrapping="Wrap" Margin="0,15,0,0"/>
+                            <TextBlock x:Name="CardExample" Text="" FontSize="14" Visibility="Collapsed"
+                                       Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center" 
+                                       TextWrapping="Wrap" Margin="0,10,0,0"/>
                         </StackPanel>
                     </Border>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-        </ListView>
-        
-        <ProgressBar x:Name="LoadingBar" Grid.Row="2" IsIndeterminate="True" Visibility="Collapsed" VerticalAlignment="Top" Margin="0,10,0,0"/>
-    </Grid>
+                    <TextBlock Text="Nhấn vào thẻ để lật" Foreground="{DynamicResource MutedText}" 
+                               HorizontalAlignment="Center" Margin="0,15,0,0"/>
+
+                    <!-- Navigation -->
+                    <WrapPanel HorizontalAlignment="Center" Margin="0,25,0,0">
+                        <Button Content="⬅️ Trước" Style="{DynamicResource SecondaryButton}" 
+                                Margin="5" Click="PrevCard_Click"/>
+                        <Button Content="🔀 Trộn" Style="{DynamicResource SecondaryButton}" 
+                                Margin="5" Click="ShuffleCards_Click"/>
+                        <Button Content="Tiếp ➡️" Style="{DynamicResource PrimaryButton}" 
+                                Margin="5" Click="NextCard_Click"/>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Word List Area -->
+            <Border x:Name="WordListArea" Visibility="Collapsed" Style="{DynamicResource CardStyle}" Margin="0,20">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                        <TextBlock Text="📋 Danh sách từ vựng (" FontSize="18" FontWeight="Bold" 
+                                   Foreground="{DynamicResource PrimaryText}"/>
+                        <TextBlock x:Name="WordCountText" Text="0" FontSize="18" FontWeight="Bold" 
+                                   Foreground="{DynamicResource Primary}"/>
+                        <TextBlock Text=" từ)" FontSize="18" FontWeight="Bold" 
+                                   Foreground="{DynamicResource PrimaryText}"/>
+                    </StackPanel>
+                    
+                    <ItemsControl x:Name="VocabularyList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{DynamicResource SurfaceBackground}" 
+                                        BorderBrush="{DynamicResource Border}" BorderThickness="1" 
+                                        CornerRadius="8" Padding="15" Margin="0,5">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Word}" FontWeight="Bold" FontSize="18" 
+                                                       Foreground="{DynamicResource PrimaryText}"/>
+                                            <TextBlock Text="{Binding Pronunciation}" FontStyle="Italic" 
+                                                       Foreground="{DynamicResource MutedText}" Margin="15,0,0,0" 
+                                                       VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding Meaning}" Foreground="{DynamicResource PrimaryLight}" 
+                                                   FontSize="15" Margin="0,8,0,0"/>
+                                        <TextBlock Text="{Binding Example}" Foreground="{DynamicResource SecondaryText}" 
+                                                   FontSize="13" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- Empty State -->
+            <Border x:Name="EmptyState" Style="{DynamicResource CardStyle}" Padding="60" HorizontalAlignment="Center">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="📚" FontSize="48" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Chọn chủ đề và nhấn &quot;Tải từ AI&quot; để bắt đầu học" 
+                               Foreground="{DynamicResource MutedText}" HorizontalAlignment="Center" Margin="0,15,0,0"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
 </Page>

@@ -8,7 +8,7 @@ namespace LinguaAI.Desktop.Services;
 public class LinguaApiService
 {
     private readonly HttpClient _httpClient;
-    public static string BaseUrl { get; set; } = "http://localhost:5278"; // Default, updated by App.xaml.cs
+    private const string BaseUrl = "https://linguaai.up.railway.app"; // Railway API
     private const long WINDOW_TICKS = 600_000_000; // 60 seconds
 
     public LinguaApiService()
@@ -18,6 +18,7 @@ public class LinguaApiService
 
     private void AddAuthHeader()
     {
+        
         // Read from the Environment Variables set by App.xaml.cs on startup
         var userId = Environment.GetEnvironmentVariable("Auth__UserId");
         var apiKey = Environment.GetEnvironmentVariable("Auth__ApiKey");

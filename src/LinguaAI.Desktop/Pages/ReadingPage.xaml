@@ -1,87 +1,175 @@
 <Page x:Class="LinguaAI.Desktop.Pages.ReadingPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-      Title="ReadingPage"
+      Title="Luyện Đọc"
       Style="{DynamicResource PageBase}">
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="30">
+            <!-- Header -->
+            <StackPanel HorizontalAlignment="Center" Margin="0,0,0,30">
+                <TextBlock Text="📖 Luyện Đọc Hiểu" Style="{DynamicResource HeaderTitle}" HorizontalAlignment="Center"/>
+                <TextBlock Text="Đọc bài và trả lời câu hỏi" 
+                           Style="{DynamicResource SubtitleText}" HorizontalAlignment="Center"/>
+            </StackPanel>
 
-        <!-- Back Button & Header -->
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
-            <Button Content="⬅" Padding="10,5" Click="BackButton_Click" Style="{DynamicResource ModernButton}" Width="40"/>
-            <TextBlock Text="Reading Practice" Style="{DynamicResource HeaderTitle}" Margin="20,0,0,20" VerticalAlignment="Center"/>
-        </StackPanel>
+            <!-- Settings Panel -->
+            <Border Style="{DynamicResource GlassPanel}" Margin="0,0,0,30">
+                <WrapPanel HorizontalAlignment="Center">
+                    <!-- Language Selector -->
+                    <StackPanel Margin="10,5">
+                        <TextBlock Text="Ngôn ngữ" Foreground="{DynamicResource SecondaryText}" FontSize="12" Margin="0,0,0,5"/>
+                        <ComboBox x:Name="LanguageComboBox" Width="150" SelectedIndex="0">
+                            <ComboBoxItem Content="🇰🇷 Tiếng Hàn" Tag="ko"/>
+                            <ComboBoxItem Content="🇨🇳 Tiếng Trung" Tag="zh"/>
+                            <ComboBoxItem Content="🇺🇸 Tiếng Anh" Tag="en"/>
+                        </ComboBox>
+                    </StackPanel>
+                    
+                    <!-- Level Selector -->
+                    <StackPanel Margin="10,5">
+                        <TextBlock Text="Trình độ" Foreground="{DynamicResource SecondaryText}" FontSize="12" Margin="0,0,0,5"/>
+                        <ComboBox x:Name="LevelComboBox" Width="130" SelectedIndex="1">
+                            <ComboBoxItem Content="Sơ cấp" Tag="beginner"/>
+                            <ComboBoxItem Content="Trung cấp" Tag="intermediate"/>
+                            <ComboBoxItem Content="Cao cấp" Tag="advanced"/>
+                        </ComboBox>
+                    </StackPanel>
+                    
+                    <!-- Topic Selector -->
+                    <StackPanel Margin="10,5">
+                        <TextBlock Text="Chủ đề" Foreground="{DynamicResource SecondaryText}" FontSize="12" Margin="0,0,0,5"/>
+                        <ComboBox x:Name="TopicComboBox" Width="150" SelectedIndex="0">
+                            <ComboBoxItem Content="🎲 Ngẫu nhiên" Tag=""/>
+                            <ComboBoxItem Content="🏛️ Văn hóa" Tag="culture"/>
+                            <ComboBoxItem Content="🍜 Ẩm thực" Tag="food"/>
+                            <ComboBoxItem Content="✈️ Du lịch" Tag="travel"/>
+                            <ComboBoxItem Content="💻 Công nghệ" Tag="technology"/>
+                            <ComboBoxItem Content="🌿 Thiên nhiên" Tag="nature"/>
+                        </ComboBox>
+                    </StackPanel>
+                    
+                    <!-- Generate Button -->
+                    <Button x:Name="GenerateButton" Content="📄 Tạo bài đọc" 
+                            Style="{DynamicResource PrimaryButton}"
+                            VerticalAlignment="Bottom" Margin="10,5"
+                            Click="GenerateButton_Click"/>
+                </WrapPanel>
+            </Border>
 
-        <!-- Controls -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,20">
-            <ComboBox x:Name="LevelComboBox" Width="120" SelectedIndex="1" VerticalContentAlignment="Center">
-                <ComboBoxItem Content="beginner"/>
-                <ComboBoxItem Content="intermediate"/>
-                <ComboBoxItem Content="advanced"/>
-            </ComboBox>
-            <TextBox x:Name="TopicInput" Width="200" Margin="10,0" Padding="5" VerticalContentAlignment="Center" Text="Technology"/>
-            <Button x:Name="GenerateButton" Content="Generate Reading" Padding="15,8" 
-                    Background="#2563eb" Foreground="White"
-                    Click="GenerateButton_Click"/>
-        </StackPanel>
-
-        <!-- Content Area -->
-        <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*"/> <!-- Reading Text -->
-                <ColumnDefinition Width="1*"/> <!-- Vocabulary & Quiz -->
-            </Grid.ColumnDefinitions>
-
-            <!-- Text -->
-            <ScrollViewer Margin="0,0,10,0">
-                <StackPanel>
-                    <TextBlock x:Name="TitleText" FontSize="24" FontWeight="Bold" TextWrapping="Wrap" Margin="0,0,0,10"/>
-                    <TextBlock x:Name="ContentText" FontSize="16" TextWrapping="Wrap" LineHeight="24"/>
+            <!-- Loading -->
+            <Border x:Name="LoadingPanel" Visibility="Collapsed" Margin="0,30">
+                <StackPanel HorizontalAlignment="Center">
+                    <ProgressBar IsIndeterminate="True" Width="200" Height="4" Foreground="{DynamicResource Primary}"/>
+                    <TextBlock Text="Đang tạo bài đọc..." Foreground="{DynamicResource MutedText}" 
+                               HorizontalAlignment="Center" Margin="0,15,0,0"/>
                 </StackPanel>
-            </ScrollViewer>
+            </Border>
 
-            <!-- Side Panel -->
-            <ScrollViewer Grid.Column="1" Margin="10,0,0,0">
-                <StackPanel>
-                    <TextBlock Text="Vocabulary" FontWeight="Bold" FontSize="18" Margin="0,0,0,10"/>
-                    <ItemsControl x:Name="VocabList">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel Margin="0,0,0,8">
-                                    <TextBlock Text="{Binding Word}" FontWeight="Bold"/>
-                                    <TextBlock Text="{Binding Meaning}" FontStyle="Italic" Foreground="#6b7280"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+            <!-- Content Area (2-column) -->
+            <Grid x:Name="ContentArea" Visibility="Collapsed">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="1*"/>
+                </Grid.ColumnDefinitions>
 
-                    <TextBlock Text="Quiz" FontWeight="Bold" FontSize="18" Margin="0,20,0,10"/>
-                    <ItemsControl x:Name="QuizList">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel Margin="0,0,0,15">
-                                    <TextBlock Text="{Binding Question}" FontWeight="SemiBold" TextWrapping="Wrap"/>
-                                    <ListBox ItemsSource="{Binding Options}" BorderThickness="0" Background="Transparent" Margin="0,5,0,0">
-                                        <ListBox.ItemTemplate>
-                                            <DataTemplate>
-                                                <RadioButton Content="{Binding}" GroupName="{Binding DataContext.Question, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"/>
-                                            </DataTemplate>
-                                        </ListBox.ItemTemplate>
-                                    </ListBox>
-                                </StackPanel>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                <!-- Reading Content -->
+                <Border Style="{DynamicResource CardStyle}" Margin="0,0,15,0">
+                    <StackPanel>
+                        <TextBlock x:Name="TitleText" FontSize="22" FontWeight="Bold" 
+                                   Foreground="{DynamicResource PrimaryText}"
+                                   TextWrapping="Wrap" Margin="0,0,0,20"/>
+                        <TextBlock x:Name="ContentText" FontSize="15" LineHeight="28"
+                                   Foreground="{DynamicResource SecondaryText}" 
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Sidebar: Vocabulary & Quiz -->
+                <StackPanel Grid.Column="1">
+                    <!-- Timer -->
+                    <Border Style="{DynamicResource GlassPanel}" Margin="0,0,0,15" Padding="15">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="⏱️ " FontSize="18"/>
+                            <TextBlock x:Name="TimerText" Text="00:00" FontSize="22" FontWeight="Bold" 
+                                       Foreground="{DynamicResource AccentGold}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Vocabulary -->
+                    <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,15">
+                        <StackPanel>
+                            <TextBlock Text="📚 Từ vựng" FontSize="18" FontWeight="Bold" 
+                                       Foreground="{DynamicResource PrimaryText}" Margin="0,0,0,15"/>
+                            <ItemsControl x:Name="VocabList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{DynamicResource SurfaceBackground}" 
+                                                Padding="10" CornerRadius="6" Margin="0,0,0,8">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Word}" FontWeight="Bold" 
+                                                           Foreground="{DynamicResource PrimaryLight}"/>
+                                                <TextBlock Text="{Binding Meaning}" 
+                                                           Foreground="{DynamicResource SecondaryText}" FontSize="13"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Quiz -->
+                    <Border Style="{DynamicResource CardStyle}">
+                        <StackPanel>
+                            <TextBlock Text="❓ Câu hỏi đọc hiểu" FontSize="18" FontWeight="Bold" 
+                                       Foreground="{DynamicResource PrimaryText}" Margin="0,0,0,15"/>
+                            <ItemsControl x:Name="QuizList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{DynamicResource SurfaceBackground}" 
+                                                Padding="12" CornerRadius="6" Margin="0,0,0,10">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Question}" FontWeight="SemiBold" 
+                                                           Foreground="{DynamicResource PrimaryText}" 
+                                                           TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                                <ItemsControl ItemsSource="{Binding Options}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <RadioButton Content="{Binding}" 
+                                                                         Foreground="{DynamicResource SecondaryText}"
+                                                                         Margin="0,3"/>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- Check Answers Button -->
+                            <Button x:Name="CheckAnswersBtn" Content="Kiểm tra đáp án" 
+                                    Style="{DynamicResource PrimaryButton}" Margin="0,15,0,0"
+                                    Click="CheckAnswers_Click"/>
+                            
+                            <!-- Next Lesson Button -->
+                            <Button x:Name="NextLessonBtn" Content="Bài tiếp theo ➡" 
+                                    Style="{DynamicResource SecondaryButton}" Margin="0,10,0,0"
+                                    Click="NextLesson_Click"/>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
-            </ScrollViewer>
+            </Grid>
 
-            <ProgressBar x:Name="LoadingBar" Grid.ColumnSpan="2" IsIndeterminate="True" Visibility="Collapsed" VerticalAlignment="Center" Height="20" Width="200"/>
-        </Grid>
-    </Grid>
+            <!-- Empty State -->
+            <Border x:Name="EmptyState" Style="{DynamicResource CardStyle}" Padding="60" HorizontalAlignment="Center">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="📖" FontSize="48" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Chọn ngôn ngữ và nhấn &quot;Tạo bài đọc&quot; để bắt đầu" 
+                               Foreground="{DynamicResource MutedText}" HorizontalAlignment="Center" Margin="0,15,0,0"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
 </Page>
