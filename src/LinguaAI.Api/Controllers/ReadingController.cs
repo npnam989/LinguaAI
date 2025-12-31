@@ -36,7 +36,8 @@ public class ReadingController : ControllerBase
             {
                 Question = q.question,
                 Options = q.options,
-                CorrectIndex = q.correctIndex
+                CorrectIndex = q.correctIndex,
+                Explanation = q.explanation
             }).ToList()
         });
     }

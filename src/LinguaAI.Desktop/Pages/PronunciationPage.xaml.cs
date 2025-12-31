@@ -1,3 +1,4 @@
+using System.IO;
 using System.Speech.Recognition;
 using System.Windows;
 using System.Windows.Controls;
@@ -15,6 +16,11 @@ public partial class PronunciationPage : Page
     private SpeechRecognitionEngine? _recognizer;
     private bool _isRecording = false;
     private string _recognizedText = "";
+
+    // AI Transcription
+    private MemoryStream? _audioBuffer;
+    private WaveFileWriter? _waveWriter;
+    private bool _useAiTranscription = true; // Use Gemini AI by default
 
     public PronunciationPage()
     {
@@ -74,27 +80,39 @@ public partial class PronunciationPage : Page
             StatusText.Text = "Đang ghi...";
             RecordButton.Background = (System.Windows.Media.Brush)FindResource("AccentPink");
 
-            // Setup NAudio for Visualization
+            // Setup NAudio for Visualization (16kHz for API compatibility)
             _waveIn = new WaveInEvent();
             _waveIn.DeviceNumber = 0;
-            _waveIn.WaveFormat = new WaveFormat(16000, 1);
+            _waveIn.WaveFormat = new WaveFormat(16000, 16, 1); // 16kHz 16-bit mono for Gemini
+            _waveIn.BufferMilliseconds = 50;
             _waveIn.DataAvailable += OnAudioDataAvailable;
-            _waveIn.StartRecording();
 
-            // Setup System.Speech for Recognition
-            if (_recognizer == null)
+            // Setup audio buffer for AI transcription
+            if (_useAiTranscription)
             {
-                _recognizer = new SpeechRecognitionEngine();
-                _recognizer.SetInputToDefaultAudioDevice();
-                _recognizer.SpeechRecognized += (s, args) =>
-                {
-                    _recognizedText = args.Result.Text;
-                };
+                _audioBuffer = new MemoryStream();
+                _waveWriter = new WaveFileWriter(_audioBuffer, _waveIn.WaveFormat);
             }
 
-            _recognizer.UnloadAllGrammars();
-            _recognizer.LoadGrammar(new DictationGrammar());
-            _recognizer.RecognizeAsync(RecognizeMode.Multiple);
+            _waveIn.StartRecording();
+
+            // Setup Windows Speech Recognition as fallback
+            if (!_useAiTranscription)
+            {
+                if (_recognizer == null)
+                {
+                    _recognizer = new SpeechRecognitionEngine();
+                    _recognizer.SetInputToDefaultAudioDevice();
+                    _recognizer.SpeechRecognized += (s, args) =>
+                    {
+                        _recognizedText = args.Result.Text;
+                    };
+                }
+
+                _recognizer.UnloadAllGrammars();
+                _recognizer.LoadGrammar(new DictationGrammar());
+                _recognizer.RecognizeAsync(RecognizeMode.Multiple);
+            }
 
             _isRecording = true;
         }
@@ -106,6 +124,12 @@ public partial class PronunciationPage : Page
 
     private void OnAudioDataAvailable(object? sender, WaveInEventArgs e)
     {
+        // Write to buffer for AI transcription
+        if (_useAiTranscription && _waveWriter != null)
+        {
+            _waveWriter.Write(e.Buffer, 0, e.BytesRecorded);
+        }
+
         // Calculate RMS for visualization
         double sum2 = 0;
         for (int i = 0; i < e.BytesRecorded; i += 2)
@@ -139,7 +163,7 @@ public partial class PronunciationPage : Page
     private async Task StopRecordingAsync()
     {
         _isRecording = false;
-        StatusText.Text = "Đang phân tích...";
+        StatusText.Text = _useAiTranscription ? "Đang phân tích bằng AI..." : "Đang phân tích...";
         RecordButton.Background = (System.Windows.Media.Brush)FindResource("GradientPrimary");
         LoadingPanel.Visibility = Visibility.Visible;
 
@@ -151,19 +175,53 @@ public partial class PronunciationPage : Page
             _waveIn = null;
         }
 
-        if (_recognizer != null)
+        AudioCanvas.Children.Clear();
+
+        // Get spoken text via AI or Windows recognition
+        string spoken = "";
+
+        if (_useAiTranscription && _waveWriter != null && _audioBuffer != null)
         {
-            _recognizer.RecognizeAsyncStop();
+            try
+            {
+                // Finalize WAV file
+                _waveWriter.Flush();
+                var audioData = _audioBuffer.ToArray();
+                _waveWriter.Dispose();
+                _waveWriter = null;
+                _audioBuffer.Dispose();
+                _audioBuffer = null;
+
+                if (audioData.Length > 100)
+                {
+                    // Get language
+                    var language = (LanguageComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "ko";
+
+                    // Call API for AI transcription
+                    var transcript = await _apiService.TranscribeAudioAsync(audioData, language);
+                    spoken = transcript ?? "";
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Lỗi AI transcription: {ex.Message}", "Lỗi");
+            }
+        }
+        else
+        {
+            // Fallback: Windows speech recognition
+            if (_recognizer != null)
+            {
+                _recognizer.RecognizeAsyncStop();
+            }
+            await Task.Delay(500);
+            spoken = _recognizedText;
         }
 
-        AudioCanvas.Children.Clear();
-        await Task.Delay(1000);
-
-        // Get spoken text
-        var spoken = _recognizedText;
+        // If still empty, use target phrase for demo
         if (string.IsNullOrEmpty(spoken))
         {
-            spoken = PhraseText.Text; // Fallback for demo
+            spoken = "(Không nhận diện được)";
         }
 
         // Show spoken text
@@ -171,10 +229,10 @@ public partial class PronunciationPage : Page
         SpokenArea.Visibility = Visibility.Visible;
 
         // Get language
-        var language = (LanguageComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "ko";
+        var lang = (LanguageComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "ko";
 
-        // Call API
-        var result = await _apiService.EvaluatePronunciationAsync(language, PhraseText.Text, spoken);
+        // Call API to evaluate pronunciation (comparing target vs spoken)
+        var result = await _apiService.EvaluatePronunciationAsync(lang, PhraseText.Text, spoken);
         
         LoadingPanel.Visibility = Visibility.Collapsed;
 
@@ -204,3 +262,4 @@ public partial class PronunciationPage : Page
         }
     }
 }
+

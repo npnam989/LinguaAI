@@ -135,6 +135,22 @@ function checkAnswers() {
                 label.style.border = '1px solid var(--accent-pink)';
             }
         });
+
+        // Show Explanation
+        if (q.explanation) {
+            const questionContainer = labels[0].parentNode.parentNode; // Get parent of options grid
+            if (!questionContainer.querySelector('.explanation-text')) {
+                const expDiv = document.createElement('div');
+                expDiv.className = 'explanation-text';
+                expDiv.style.marginTop = 'var(--space-sm)';
+                expDiv.style.color = 'var(--accent-green)';
+                expDiv.style.fontSize = '0.9rem';
+                expDiv.style.fontStyle = 'italic';
+                expDiv.innerHTML = `💡 Giải thích: ${escapeHtml(q.explanation)}`;
+                questionContainer.appendChild(expDiv);
+            }
+        }
+
         if (userAnswers[idx] === q.correctIndex) {
             correct++;
         }

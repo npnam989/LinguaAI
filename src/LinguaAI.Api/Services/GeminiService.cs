@@ -9,7 +9,7 @@ public interface IGeminiService
     Task<string> ChatAsync(string language, string scenario, string message, List<(string role, string content)> history);
     Task<(int score, string feedback, List<string> corrections, List<(string word, bool correct, string error)> words)> EvaluatePronunciationAsync(string language, string target, string spoken);
     Task<(string corrected, List<(string orig, string fix, string explanation)> corrections, List<string> suggestions)> CheckWritingAsync(string language, string text, string level);
-    Task<(string title, string content, List<(string word, string meaning, string pronunciation, string example)> vocabulary, List<(string question, List<string> options, int correctIndex)> quiz)> GenerateReadingAsync(string language, string level, string? topic);
+    Task<(string title, string content, List<(string word, string meaning, string pronunciation, string example)> vocabulary, List<(string question, List<string> options, int correctIndex, string explanation)> quiz)> GenerateReadingAsync(string language, string level, string? topic);
     Task<List<(string word, string meaning, string pronunciation, string example)>> GenerateVocabularyAsync(string language, string theme, int count);
     Task<string> TranslateAsync(string text, string targetLanguage);
     Task<List<(string word, string meaning, string pronunciation, string example)>> EnrichVocabularyAsync(List<(string word, string meaning)> items);
@@ -203,7 +203,7 @@ Respond in JSON format only (no markdown):
         }
     }
 
-    public async Task<(string title, string content, List<(string word, string meaning, string pronunciation, string example)> vocabulary, List<(string question, List<string> options, int correctIndex)> quiz)> GenerateReadingAsync(string language, string level, string? topic)
+    public async Task<(string title, string content, List<(string word, string meaning, string pronunciation, string example)> vocabulary, List<(string question, List<string> options, int correctIndex, string explanation)> quiz)> GenerateReadingAsync(string language, string level, string? topic)
     {
         var langName = GetLanguageName(language);
         var topicPart = string.IsNullOrEmpty(topic) ? "any interesting topic" : topic;
@@ -217,7 +217,7 @@ Respond in JSON format only (no markdown):
         {{""word"": ""<word>"", ""meaning"": ""<Vietnamese meaning>"", ""pronunciation"": ""<romanization if applicable>"", ""example"": ""<example sentence>""}}
     ],
     ""questions"": [
-        {{""question"": ""<comprehension question in Vietnamese>"", ""options"": [""A"", ""B"", ""C"", ""D""], ""correctIndex"": 0}}
+        {{""question"": ""<comprehension question in Vietnamese>"", ""options"": [""A"", ""B"", ""C"", ""D""], ""correctIndex"": 0, ""explanation"": ""<explanation why is it correct in Vietnamese>""}}
     ]
 }}";
 
@@ -239,13 +239,14 @@ Respond in JSON format only (no markdown):
                 root.GetProperty("questions").EnumerateArray().Select(x => (
                     x.GetProperty("question").GetString() ?? "",
                     x.GetProperty("options").EnumerateArray().Select(o => o.GetString() ?? "").ToList(),
-                    x.GetProperty("correctIndex").GetInt32()
+                    x.GetProperty("correctIndex").GetInt32(),
+                    x.TryGetProperty("explanation", out var exp) ? exp.GetString() ?? "" : ""
                 )).ToList()
             );
         }
         catch
         {
-            return ("Error", "Could not generate content", new List<(string, string, string, string)>(), new List<(string, List<string>, int)>());
+            return ("Error", "Could not generate content", new List<(string, string, string, string)>(), new List<(string, List<string>, int, string)>());
         }
     }
 
