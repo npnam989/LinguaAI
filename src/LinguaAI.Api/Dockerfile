@@ -6,10 +6,12 @@ ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 
 
+
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 COPY ["LinguaAI.Api/LinguaAI.Api.csproj", "LinguaAI.Api/"]
-COPY ["LinguaAI.Common/LinguaAI.Common.csproj", "LinguaAI.Common/"]
+# Copy entire directory to avoid file lookup issues
+COPY LinguaAI.Common/ LinguaAI.Common/
 RUN dotnet restore "LinguaAI.Api/LinguaAI.Api.csproj"
 COPY . .
 WORKDIR "/src/LinguaAI.Api"
