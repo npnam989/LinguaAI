@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.git/
+**/.github/
+*.sln
+docker-compose.yml
+build_docker.bat
