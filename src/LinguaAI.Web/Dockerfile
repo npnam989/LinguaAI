@@ -7,9 +7,11 @@ ENV ASPNETCORE_ENVIRONMENT=Production
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
-COPY ["LinguaAI.Web.csproj", "."]
-RUN dotnet restore
+COPY ["LinguaAI.Web/LinguaAI.Web.csproj", "LinguaAI.Web/"]
+COPY ["LinguaAI.Common/LinguaAI.Common.csproj", "LinguaAI.Common/"]
+RUN dotnet restore "LinguaAI.Web/LinguaAI.Web.csproj"
 COPY . .
+WORKDIR "/src/LinguaAI.Web"
 RUN dotnet build -c Release -o /app/build
 
 FROM build AS publish
