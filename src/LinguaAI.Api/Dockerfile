@@ -5,11 +5,14 @@ EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 
+
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
-COPY ["LinguaAI.Api.csproj", "."]
-RUN dotnet restore
+COPY ["LinguaAI.Api/LinguaAI.Api.csproj", "LinguaAI.Api/"]
+COPY ["LinguaAI.Common/LinguaAI.Common.csproj", "LinguaAI.Common/"]
+RUN dotnet restore "LinguaAI.Api/LinguaAI.Api.csproj"
 COPY . .
+WORKDIR "/src/LinguaAI.Api"
 RUN dotnet build -c Release -o /app/build
 
 FROM build AS publish
