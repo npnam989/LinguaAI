@@ -456,29 +456,43 @@ Respond in JSON format only (no markdown):
             _ => "General practice sentences"
         };
 
-        var prompt = $@"Generate {request.Count} language practice exercises in {langName} for {request.Level} level.
+        var prompt = $@"Generate {request.Count} language practice exercises for {request.Level} level students learning {langName}.
 Type: {typeDesc} (Internal Type: {request.Type})
-Vocabulary to focus on (try to use these): {string.Join(", ", request.Words)}
+Vocabulary pool to integrate: {string.Join(", ", request.Words)}
+
+LEVEL COMPLEXITY GUIDELINES:
+- Elementary (Sơ cấp): Simple sentences, basic grammar, everyday situations (greeting, shopping, weather)
+- Intermediate (Trung cấp): Compound sentences, varied grammar patterns, social contexts (work, travel, relationships)
+- Advanced (Cao cấp): Complex sentences, formal/informal registers, abstract topics (opinions, culture, philosophy)
 
 Requirements based on Type:
-1. fill_blank: Provide a sentence with the target word replaced by '_____'. CorrectAnswer is the missing word. Options should include the correct word and 3 distractors.
-2. arrange: Provide a sentence. The 'Options' list should contain the words of the sentence in SHUFFLED order. CorrectAnswer is the full correct sentence.
-3. translate: Create a VIETNAMESE sentence that uses the vocabulary word (use the Vietnamese meaning/translation of the vocabulary word in the sentence). The user must translate this Vietnamese sentence into {langName}. CorrectAnswer is the correct {langName} translation. 'Options' is empty. The explanation should include: word-by-word breakdown, grammar notes, and alternative translations if any.
+1. fill_blank: Provide a {langName} sentence with ONE vocabulary word replaced by '_____'. CorrectAnswer is the missing word. Options should include the correct word and 3 similar distractors.
 
-IMPORTANT: The explanation MUST be bilingual:
-- First line: explanation in {langName}
-- Second line: explanation in Vietnamese (Tiếng Việt)
+2. arrange: Provide a complete {langName} sentence. The 'Options' list contains the sentence words in SHUFFLED order. CorrectAnswer is the correctly ordered sentence.
 
-Respond in JSON format only:
+3. translate: 
+   - Create a VIETNAMESE sentence that naturally uses one of the vocabulary words (use its Vietnamese meaning in context)
+   - Add a brief context/situation description before the sentence (e.g., ""[Tại nhà hàng]"", ""[Nói chuyện với bạn]"")
+   - DO NOT hint or reveal which vocabulary word is being used
+   - CorrectAnswer is the {langName} translation
+   - Sentence complexity must match the level (Elementary=simple, Intermediate=moderate, Advanced=complex)
+   - 'Options' is empty
+   - Explanation MUST include:
+     * Word-by-word breakdown
+     * Grammar structure explanation
+     * Alternative acceptable translations
+
+IMPORTANT: All explanations must be bilingual ({langName} + Vietnamese).
+
+JSON Response format:
 {{
     ""exercises"": [
         {{
-            ""question"": ""<The question text>"",
+            ""question"": ""<Context if translate type> <The question text>"",
             ""correctAnswer"": ""<The correct answer>"",
             ""options"": [""<option1>"", ""...""],
-            ""explanation"": ""<{langName} explanation here>\n<Vietnamese explanation here>"",
-            ""explanationVi"": ""<Vietnamese explanation>"",
-            ""targetWord"": ""<The vocabulary word used, if any>""
+            ""explanation"": ""<Detailed bilingual explanation>"",
+            ""explanationVi"": ""<Vietnamese explanation only>""
         }}
     ]
 }}";
