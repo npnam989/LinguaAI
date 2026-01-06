@@ -497,7 +497,21 @@ JSON Response format:
             
             var json = ExtractJson(response);
             _logger.LogInformation("Extracted JSON length: {Length}", json.Length);
+
+             // Log the snippet around the error if possible, or just the JSON
+            if (json.Length > 2000) 
+            {
+                 _logger.LogInformation("JSON Snippet (first 1000): {Json}", json.Substring(0, 1000));
+                 _logger.LogInformation("JSON Snippet (last 200): {Json}", json.Substring(json.Length - 200));
+            }
+            else
+            {
+                _logger.LogInformation("Full JSON: {Json}", json);
+            }
             
+            // Basic cleanup for common issues
+            json = json.Replace("\t", " ");
+
             // Use Newtonsoft.Json for more lenient parsing
             var result = Newtonsoft.Json.JsonConvert.DeserializeObject<LinguaAI.Common.Models.PracticeResponse>(json);
             return result ?? new LinguaAI.Common.Models.PracticeResponse();
@@ -505,6 +519,10 @@ JSON Response format:
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error generating practice exercises. Response length: {Length}", response.Length);
+            // Try to log the specific part that might have failed if it's a JSON reader exception
+            if (ex is Newtonsoft.Json.JsonReaderException jex) {
+                 _logger.LogError("JSON Error at Line {Line}, Position {Pos}, Path {Path}", jex.LineNumber, jex.LinePosition, jex.Path);
+            }
             return new LinguaAI.Common.Models.PracticeResponse();
         }
     }
