@@ -160,7 +160,10 @@ public class PracticeController : Controller
             await audio.CopyToAsync(stream);
             var audioBytes = stream.ToArray();
             
-            var result = await _apiService.TranscribeAudioAsync(audioBytes, language);
+            // Detect MIME type from file
+            var mimeType = audio.ContentType ?? "audio/webm";
+            
+            var result = await _apiService.TranscribeAudioAsync(audioBytes, language, mimeType);
             return Json(new { text = result });
         }
         catch (Exception ex)

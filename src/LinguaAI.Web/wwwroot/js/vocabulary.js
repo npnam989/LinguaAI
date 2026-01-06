@@ -705,6 +705,7 @@ async function checkQuizAnswer(spokenText) {
 }
 
 function nextQuizQuestion() {
+    quizIndex++;
     showQuizQuestion();
 }
 
