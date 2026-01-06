@@ -253,20 +253,53 @@ public class ApiService : IApiService
     {
         try
         {
-            var payload = new { 
-                AudioData = audioData, 
-                Language = language,
-                MimeType = mimeType
-            };
+            // SpeechController expects IFormFile, so we need to send as multipart/form-data
+            using var content = new MultipartFormDataContent();
             
-            var response = await SendWithAuthAsync<TranscribeResponse>(HttpMethod.Post, "/api/speech/transcribe", payload);
-            return response?.Text ?? "";
+            // Create a ByteArrayContent with proper MIME type
+            var fileContent = new ByteArrayContent(audioData);
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(mimeType);
+            
+            // Add as file with extension matching MIME type
+            var extension = mimeType switch
+            {
+                "audio/webm" => ".webm",
+                "audio/mp4" => ".m4a",
+                "audio/wav" => ".wav",
+                _ => ".webm"
+            };
+            content.Add(fileContent, "audio", $"recording{extension}");
+            content.Add(new StringContent(language), "language");
+            
+            // Send directly to API
+            var apiUrl = _options.BaseUrl.TrimEnd('/') + "/api/speech/transcribe";
+            var response = await _httpClient.PostAsync(apiUrl, content);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<SpeechTranscribeResult>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                return result?.Transcript ?? "";
+            }
+            else
+            {
+                var errorText = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Transcription API error: {StatusCode} - {Error}", response.StatusCode, errorText);
+                return "";
+            }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error transcribing audio");
             return "";
         }
+    }
+
+    private class SpeechTranscribeResult
+    {
+        public string Transcript { get; set; } = "";
+        public bool Success { get; set; }
+        public string? Error { get; set; }
     }
 
     public async Task<PracticeResponse?> GeneratePracticeExercisesAsync(PracticeRequest request)

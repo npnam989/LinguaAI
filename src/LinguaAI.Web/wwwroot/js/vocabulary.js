@@ -441,6 +441,26 @@ async function toggleQuizRecording() {
 async function startQuizRecording() {
     if (isRecording) return;
 
+    // Hide previous recording buttons (for re-recording)
+    document.getElementById('recordingActions').classList.add('hidden');
+
+    // Reset and restart timer
+    clearInterval(quizTimer);
+    quizTimeLeft = QUIZ_TIME_LIMIT;
+    document.getElementById('timerDisplay').textContent = quizTimeLeft;
+    document.getElementById('timerBar').style.width = '100%';
+    quizTimer = setInterval(() => {
+        quizTimeLeft--;
+        document.getElementById('timerDisplay').textContent = quizTimeLeft;
+        document.getElementById('timerBar').style.width = `${(quizTimeLeft / QUIZ_TIME_LIMIT) * 100}%`;
+        if (quizTimeLeft <= 0) {
+            clearInterval(quizTimer);
+            if (isRecording) {
+                stopQuizRecording();
+            }
+        }
+    }, 1000);
+
     // UI Reset
     document.getElementById('quizResultWrapper').classList.add('hidden');
     document.getElementById('quizResultArea').classList.add('hidden');
@@ -498,15 +518,28 @@ async function startQuizRecording() {
     }
 }
 
+// Store recorded blob for playback and submission
+let recordedBlob = null;
+let recordedMimeType = 'audio/webm';
+
 async function stopQuizRecordingAndSubmit() {
+    // Redirect to the new stop function
+    await stopQuizRecording();
+}
+
+async function stopQuizRecording() {
     if (!isRecording || !mediaRecorder) return;
 
-    // UI Update
-    document.getElementById('quizRecordStatus').textContent = 'Đang phân tích...';
-    document.getElementById('quizRecordBtn').disabled = true;
+    // Pause timer
+    clearInterval(quizTimer);
+
+    // UI Update - show we've stopped but not submitted yet
+    document.getElementById('quizRecordStatus').textContent = 'Đã dừng ghi âm. Kiểm tra và nộp bài.';
+    document.getElementById('quizRecordBtn').textContent = '🎤';
+    document.getElementById('quizRecordBtn').style.background = '';
     document.getElementById('quizRecordBtn').classList.remove('recording-pulse');
 
-    isRecording = false; // Stop visualizer loop
+    isRecording = false;
 
     // Stop Visualizer
     if (visualizerFrame) {
@@ -514,54 +547,81 @@ async function stopQuizRecordingAndSubmit() {
         visualizerFrame = null;
     }
 
-    // Return a promise that resolves when recording is processed
     return new Promise((resolve) => {
         mediaRecorder.onstop = async () => {
-            // Stop all tracks
             if (stream) stream.getTracks().forEach(track => track.stop());
 
-            const mimeType = mediaRecorder.mimeType || 'audio/webm';
-            const audioBlob = new Blob(audioChunks, { type: mimeType });
-            console.log('Audio blob size:', audioBlob.size, 'type:', mimeType);
+            recordedMimeType = mediaRecorder.mimeType || 'audio/webm';
+            recordedBlob = new Blob(audioChunks, { type: recordedMimeType });
+            console.log('Audio blob size:', recordedBlob.size, 'type:', recordedMimeType);
 
-            if (audioBlob.size < 1000) {
-                console.warn('Audio blob too small, might be empty');
+            if (recordedBlob.size < 1000) {
                 document.getElementById('quizRecordStatus').textContent = 'Không ghi được âm thanh. Thử lại.';
-                resetRecordingUI();
+                document.getElementById('recordingActions').classList.add('hidden');
                 resolve();
                 return;
             }
 
-            // Processing
-            const formData = new FormData();
-            formData.append('audio', audioBlob, 'recording.webm');
-            formData.append('language', document.getElementById('languageSelect').value);
+            // Set up audio element for playback
+            const audioUrl = URL.createObjectURL(recordedBlob);
+            document.getElementById('recordingPlayback').src = audioUrl;
 
-            try {
-                const transRes = await fetch('/Practice/Transcribe', {
-                    method: 'POST',
-                    body: formData
-                });
+            // Show action buttons
+            document.getElementById('recordingActions').classList.remove('hidden');
+            document.getElementById('recordingActions').style.display = 'flex';
 
-                if (!transRes.ok) throw new Error('Transcription failed');
-
-                const transData = await transRes.json();
-                const spokenText = transData.text || '';
-                console.log('Transcribed text:', spokenText);
-
-                checkQuizAnswer(spokenText);
-
-            } catch (err) {
-                console.error('Quiz processing error:', err);
-                document.getElementById('quizRecordStatus').textContent = 'Lỗi xử lý. Thử lại.';
-                resetRecordingUI();
-            }
             resolve();
         };
 
         mediaRecorder.stop();
     });
 }
+
+function playRecording() {
+    const audio = document.getElementById('recordingPlayback');
+    if (audio.src) {
+        audio.currentTime = 0;
+        audio.play();
+    }
+}
+
+async function submitRecording() {
+    if (!recordedBlob || recordedBlob.size < 1000) {
+        alert('Không có ghi âm để nộp. Vui lòng ghi âm lại.');
+        return;
+    }
+
+    document.getElementById('recordingActions').classList.add('hidden');
+    document.getElementById('quizRecordStatus').textContent = 'Đang phân tích...';
+    document.getElementById('quizRecordBtn').disabled = true;
+
+    const formData = new FormData();
+    const extension = recordedMimeType.includes('webm') ? '.webm' : '.m4a';
+    formData.append('audio', recordedBlob, `recording${extension}`);
+    formData.append('language', document.getElementById('languageSelect').value);
+
+    try {
+        const transRes = await fetch('/Practice/Transcribe', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!transRes.ok) throw new Error('Transcription failed');
+
+        const transData = await transRes.json();
+        const spokenText = transData.text || '';
+        console.log('Transcribed text:', spokenText);
+
+        checkQuizAnswer(spokenText);
+
+    } catch (err) {
+        console.error('Quiz processing error:', err);
+        document.getElementById('quizRecordStatus').textContent = 'Lỗi xử lý. Thử lại.';
+        resetRecordingUI();
+    }
+}
+
+
 
 function resetRecordingUI() {
     isRecording = false;

@@ -192,6 +192,14 @@
                         🎤
                     </button>
                     <p id="quizRecordStatus" style="color: var(--text-muted); margin-top: var(--space-md); font-weight: 500;">Nhấn để bắt đầu nói</p>
+                    
+                    <!-- Recording Actions (shown after stopping) -->
+                    <div id="recordingActions" class="hidden" style="display: flex; gap: 12px; margin-top: var(--space-md); justify-content: center;">
+                        <button id="listenAgainBtn" class="btn btn-secondary" onclick="playRecording()">🔊 Nghe lại</button>
+                        <button id="submitRecordingBtn" class="btn btn-primary" onclick="submitRecording()">📤 Nộp bài</button>
+                    </div>
+                    <!-- Audio element for playback -->
+                    <audio id="recordingPlayback" style="display:none;"></audio>
                 </div>
 
                 <!-- User Answer & Result -->
