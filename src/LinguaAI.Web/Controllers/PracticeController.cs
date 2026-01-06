@@ -147,4 +147,25 @@ public class PracticeController : Controller
         var themes = await _apiService.GetThemesAsync();
         return Json(themes);
     }
+
+    [HttpPost]
+    public async Task<IActionResult> Transcribe(IFormFile audio, [FromForm] string language)
+    {
+        if (audio == null || audio.Length == 0)
+            return BadRequest(new { error = "No audio file provided" });
+
+        try
+        {
+            using var stream = new MemoryStream();
+            await audio.CopyToAsync(stream);
+            var audioBytes = stream.ToArray();
+            
+            var result = await _apiService.TranscribeAudioAsync(audioBytes, language);
+            return Json(new { text = result });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = "Transcription failed: " + ex.Message });
+        }
+    }
 }

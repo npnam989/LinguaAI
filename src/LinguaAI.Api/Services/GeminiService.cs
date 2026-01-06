@@ -340,7 +340,13 @@ Translation:";
         if (items == null || items.Count == 0) return new List<(string, string, string, string)>();
 
         var itemsList = string.Join("\n", items.Select(x => $"{x.word}: {x.meaning}"));
-        var prompt = $@"I have a list of vocabulary words. Please provide the IPA pronunciation and one short example sentence for each.
+        var prompt = $@"I have a list of vocabulary words. Some entries may contain synonyms separated by '/', '|', ',', ';', '\', or '='.
+For such entries, please format the output as follows:
+- Word: Keep the original input string (e.g. 'A / B')
+- Pronunciation: Provide IPA for ALL synonyms, separated by ' - ' (e.g. '/ipa A/ - /ipa B/')
+- Meaning: Format meanings in parentheses if possible or keep original.
+- Example: Provide a short example for EACH synonym, formatted like: 'Word A: Example A (Meaning A) / Word B: Example B (Meaning B)'.
+
 Input:
 {itemsList}
 

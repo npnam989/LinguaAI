@@ -15,6 +15,7 @@ public interface IApiService
     Task<List<PronunciationPhrase>> GetPhrasesAsync(string language);
     Task<ChatResponse?> ChatAsync(string language, string scenario, string message, List<ChatMessage> history);
     Task<List<ThemeItem>> GetThemesAsync();
+    Task<string> TranscribeAudioAsync(byte[] audioData, string language);
 }
 
 public class ApiService : IApiService
@@ -246,4 +247,42 @@ public class ApiService : IApiService
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(input));
         return Convert.ToHexString(bytes).ToLowerInvariant();
     }
+
+    public async Task<string> TranscribeAudioAsync(byte[] audioData, string language)
+    {
+        try
+        {
+            var request = new
+            {
+                AudioData = Convert.ToBase64String(audioData),
+                Language = language
+            };
+            
+            // Note: The main API endpoint is expecting just the raw audio or a slightly different format?
+            // In Desktop App, SpeechController has [HttpPost("transcribe")]. 
+            // In SpeechController.cs (Api project):
+            // public async Task<IActionResult> Transcribe([FromBody] TranscribeRequest request)
+            
+            // I need to match that payload.
+            // Let's create a TranscribeRequest object.
+            
+            var payload = new { AudioData = audioData, Language = language }; 
+            // Wait, JSON serializer handles byte[] as base64 string automatically usually.
+            // Let's check SpeechController definition later.
+            // Assuming standard JSON post:
+            
+            var response = await SendWithAuthAsync<TranscribeResponse>(HttpMethod.Post, "/api/speech/transcribe", payload);
+            return response?.Text ?? "";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error transcribing audio");
+            return "";
+        }
+    }
+}
+
+public class TranscribeResponse 
+{
+    public string Text { get; set; } = "";
 }

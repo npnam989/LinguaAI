@@ -781,7 +781,7 @@ public partial class VocabularyPage : Page
     {
         _isQuizRecording = false;
         QuizRecordBtn.Background = (System.Windows.Media.Brush)FindResource("GradientPrimary");
-        QuizRecordStatus.Text = "Đang xử lý bằng AI...";
+        QuizRecordStatus.Text = "Đang phân tích...";
 
         // Stop audio
         _waveIn?.StopRecording();
@@ -789,6 +789,8 @@ public partial class VocabularyPage : Page
         _waveIn = null;
         _quizTimer?.Stop();
         VolumeMeter.Width = 0;
+
+        string spokenText = "";
 
         if (_useAiTranscription && _waveWriter != null && _audioBuffer != null)
         {
@@ -798,33 +800,19 @@ public partial class VocabularyPage : Page
                 _waveWriter.Flush();
                 var audioData = _audioBuffer.ToArray();
                 _waveWriter.Dispose();
-                _waveWriter = null;
                 _audioBuffer.Dispose();
+                _waveWriter = null;
                 _audioBuffer = null;
 
-                if (audioData.Length > 100) // Minimum valid audio
+                if (audioData.Length > 100)
                 {
-                    // Get language
                     var selectedLang = (LanguageComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "ko";
-
-                    // Call API for AI transcription
-                    var transcript = await _apiService.TranscribeAudioAsync(audioData, selectedLang);
-                    _recognizedText = transcript ?? "";
-
-                    Dispatcher.Invoke(() =>
-                    {
-                        QuizRecordStatus.Text = string.IsNullOrEmpty(_recognizedText) 
-                            ? "(Không nhận diện được)" 
-                            : $"\"{_recognizedText}\"";
-                    });
+                    spokenText = await _apiService.TranscribeAudioAsync(audioData, selectedLang);
                 }
             }
             catch (Exception ex)
             {
-                Dispatcher.Invoke(() =>
-                {
-                    QuizRecordStatus.Text = $"Lỗi AI: {ex.Message}";
-                });
+                System.Windows.MessageBox.Show($"Lỗi xử lý âm thanh: {ex.Message}", "Lỗi");
             }
         }
         else
@@ -836,66 +824,111 @@ public partial class VocabularyPage : Page
                 _recognizer.SpeechHypothesized -= OnSpeechHypothesized;
                 try { _recognizer.RecognizeAsyncStop(); } catch { }
             }
-            await Task.Delay(300); // Wait for recognition
+            await Task.Delay(300); // Wait for recognition to complete
+            spokenText = _recognizedText;
         }
-
-        // Evaluate answer
-        EvaluateQuizAnswer();
+        
+        // 2. Evaluate
+        EvaluateQuizAnswer(spokenText ?? "");
     }
 
-    private void EvaluateQuizAnswer()
+    private async void EvaluateQuizAnswer(string spoken)
     {
-        var spoken = _recognizedText.Trim();
         var word = _words[_quizIndex];
-        var expected = word.Word ?? "";
+        var targetWord = word.Word ?? "";
+        
+        // Handle synonyms (split by / | , ; \ =)
+        var synonyms = targetWord.Split(new[] { '/', '|', ',', ';', '\\', '=' }, StringSplitOptions.RemoveEmptyEntries)
+                                 .Select(s => s.Trim())
+                                 .ToList();
+
+        // 3. Pronunciation Analysis (Call API)
+        // We compare against the FULL target string first to let AI decide, 
+        // OR we pick the closest synonym?
+        // The user wants "check individual word". If I say "hello", and target is "hello/hi", it should be correct.
+        // If I pass "hello/hi" as target and "hello" as spoken to Gemini, Gemini might say "You missed 'hi'".
+        // Ideally, we should find which synonym the user *attempted* to say.
+        // Simple logic: Check string similarity locally to pick the target? No, let's just pass the full string and ask Gemini to be flexible?
+        // Or better: The user wants "Phân tích như bên chức năng phát âm". 
+        // I will match against the closest synonym first.
+        
+        // If exact match found, use it. If not, use the first one OR try to find best match?
+        // Let's rely on the text match for "Correct/Wrong" logic first.
+        
+        // Call Pronunciation Evaluation for detailed feedback
+        // We use the 'bestMatch' or just the whole string? 
+        // If user says "hello", and we evaluate against "hello", we get 100%.
+        // If we evaluate against "hello / hi", we get error.
+        // So we must pick the intended target.
+        // Strategy: Use the transcribed text to find the closest synonym (Levenshtein) and use THAT as target for evaluation.
+        
+        // Simple Levenshtein or just `Contains`? 
+        // If spoken is "helo", it's close to "hello".
+        
+        string targetForEval = synonyms.FirstOrDefault() ?? ""; // Default to first synonym
+        int minDist = int.MaxValue;
+        if (!string.IsNullOrEmpty(spoken))
+        {
+            foreach (var s in synonyms)
+            {
+                int dist = LevenshteinDistance(s.ToLower(), spoken.ToLower());
+                if (dist < minDist)
+                {
+                    minDist = dist;
+                    targetForEval = s;
+                }
+            }
+        }
 
         // Show user's answer
         QuizUserAnswer.Text = string.IsNullOrEmpty(spoken) ? "(Không nhận diện được)" : spoken;
         QuizAnswerArea.Visibility = Visibility.Visible;
 
-        // Fuzzy matching like Web version (Levenshtein distance)
-        bool isCorrect = IsCorrectAnswer(spoken, expected);
+        QuizRecordStatus.Text = "Đang chấm điểm...";
+        var result = await _apiService.EvaluatePronunciationAsync((LanguageComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "en", targetForEval, spoken);
 
-        if (isCorrect)
+        if (result != null)
         {
-            _correctCount++;
-            QuizResultIcon.Text = "✅";
-            QuizResultIcon.Foreground = (System.Windows.Media.Brush)FindResource("AccentGreen");
-            QuizResultText.Text = "Chính xác!";
-            QuizResultText.Foreground = (System.Windows.Media.Brush)FindResource("AccentGreen");
-            QuizCorrectAnswer.Text = "";
+            // Logic for "Correct" in Quiz flow:
+            if (result.Score >= 70) // Threshold
+            {
+                _correctCount++;
+                QuizResultIcon.Text = "✅";
+                QuizResultIcon.Foreground = (System.Windows.Media.Brush)FindResource("AccentGreen");
+                QuizResultText.Text = "Chính xác!";
+                QuizResultText.Foreground = (System.Windows.Media.Brush)FindResource("AccentGreen");
+            }
+            else
+            {
+                _wrongCount++;
+                QuizResultIcon.Text = "❌";
+                QuizResultIcon.Foreground = (System.Windows.Media.Brush)FindResource("AccentPink");
+                QuizResultText.Text = "Chưa chính xác";
+                QuizResultText.Foreground = (System.Windows.Media.Brush)FindResource("AccentPink");
+            }
+
+            QuizCorrectAnswer.Text = $"Bạn nói: {spoken}\nĐiểm: {result.Score}%\n{result.Feedback}";
+            QuizResultArea.Visibility = Visibility.Visible;
+            QuizRecordBtn.IsEnabled = false;
         }
         else
         {
-            _wrongCount++;
-            QuizResultIcon.Text = "❌";
-            QuizResultIcon.Foreground = (System.Windows.Media.Brush)FindResource("Error");
-            QuizResultText.Text = "Chưa đúng!";
-            QuizResultText.Foreground = (System.Windows.Media.Brush)FindResource("Error");
-            QuizCorrectAnswer.Text = $"Đáp án: {word.Word} ({word.Pronunciation ?? ""})";
+            // Fallback if API fails or no spoken text
+            bool isCorrectFallback = synonyms.Any(s => s.Equals(spoken, StringComparison.OrdinalIgnoreCase));
+            if (isCorrectFallback) _correctCount++; else _wrongCount++;
+            ShowQuizResultFallback(isCorrectFallback, spoken, targetWord);
         }
-
-        QuizResultArea.Visibility = Visibility.Visible;
-        QuizRecordBtn.IsEnabled = false;
     }
 
-    private bool IsCorrectAnswer(string spoken, string expected)
+    private void ShowQuizResultFallback(bool isCorrect, string spoken, string target)
     {
-        if (string.IsNullOrEmpty(spoken)) return false;
-
-        var userWord = spoken.ToLower().Trim();
-        var correctWord = expected.ToLower().Trim();
-
-        // Exact match
-        if (userWord == correctWord) return true;
-
-        // Contains match
-        if (correctWord.Contains(userWord) || userWord.Contains(correctWord)) return true;
-
-        // Levenshtein distance <= 2 (fuzzy match like Web version)
-        if (LevenshteinDistance(userWord, correctWord) <= 2) return true;
-
-        return false;
+        QuizResultIcon.Text = isCorrect ? "✅" : "❌";
+        QuizResultIcon.Foreground = (System.Windows.Media.Brush)FindResource(isCorrect ? "AccentGreen" : "AccentPink");
+        QuizResultText.Text = isCorrect ? "Chính xác!" : "Chưa chính xác";
+        QuizResultText.Foreground = (System.Windows.Media.Brush)FindResource(isCorrect ? "AccentGreen" : "AccentPink");
+        QuizCorrectAnswer.Text = $"Đáp án: {target}\nBạn nói: {spoken}";
+        QuizResultArea.Visibility = Visibility.Visible;
+        QuizRecordBtn.IsEnabled = false;
     }
 
     // Levenshtein distance for fuzzy matching (same algorithm as Web version)
