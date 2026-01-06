@@ -21,4 +21,11 @@ public class PracticeController : ControllerBase
         var result = await _geminiService.GeneratePracticeExercisesAsync(request);
         return Ok(result);
     }
+
+    [HttpPost("check-translation")]
+    public async Task<IActionResult> CheckTranslation([FromBody] TranslationCheckRequest request)
+    {
+        var result = await _geminiService.CheckTranslationAsync(request);
+        return Ok(result);
+    }
 }

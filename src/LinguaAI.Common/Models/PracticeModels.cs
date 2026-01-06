@@ -25,3 +25,22 @@ public class PracticeResponse
 {
     public List<PracticeExercise> Exercises { get; set; } = new();
 }
+
+public class TranslationCheckRequest
+{
+    public string OriginalText { get; set; } = "";  // Vietnamese sentence
+    public string UserAnswer { get; set; } = "";     // User's translation
+    public string Language { get; set; } = "ko";     // Target language
+    public string ExpectedAnswer { get; set; } = ""; // Reference answer (optional)
+}
+
+public class TranslationCheckResponse
+{
+    public bool IsCorrect { get; set; }
+    public int Score { get; set; }  // 0-100
+    public string Feedback { get; set; } = "";
+    public string CorrectedTranslation { get; set; } = "";
+    public string WordByWordBreakdown { get; set; } = "";
+    public string GrammarNotes { get; set; } = "";
+    public List<string> AlternativeTranslations { get; set; } = new();
+}

@@ -16,6 +16,7 @@ public interface IGeminiService
     Task<List<(string word, string meaning, string pronunciation, string example)>> EnrichVocabularyAsync(List<(string word, string meaning)> items);
     Task<string> TranscribeAudioAsync(byte[] audioData, string language, string mimeType = "audio/wav");
     Task<LinguaAI.Common.Models.PracticeResponse> GeneratePracticeExercisesAsync(LinguaAI.Common.Models.PracticeRequest request);
+    Task<LinguaAI.Common.Models.TranslationCheckResponse> CheckTranslationAsync(LinguaAI.Common.Models.TranslationCheckRequest request);
 }
 
 
@@ -505,6 +506,50 @@ JSON Response format:
         {
             _logger.LogError(ex, "Error generating practice exercises. Response length: {Length}", response.Length);
             return new LinguaAI.Common.Models.PracticeResponse();
+        }
+    }
+
+    public async Task<LinguaAI.Common.Models.TranslationCheckResponse> CheckTranslationAsync(LinguaAI.Common.Models.TranslationCheckRequest request)
+    {
+        var langName = GetLanguageName(request.Language);
+        var prompt = $@"You are a {langName} language teacher. Check the student's translation from Vietnamese to {langName}.
+
+Original Vietnamese text: {request.OriginalText}
+Student's translation: {request.UserAnswer}
+Reference answer (for comparison): {request.ExpectedAnswer}
+
+Evaluate the student's translation and provide detailed feedback.
+Be lenient - accept translations that convey the same meaning even if they differ from the reference.
+Consider synonyms, different sentence structures, and colloquial expressions as acceptable.
+
+Respond in JSON format only:
+{{
+    ""isCorrect"": true/false (true if the translation is acceptable, even if not identical to reference),
+    ""score"": <0-100 score>,
+    ""feedback"": ""<Brief feedback in Vietnamese about the translation quality>"",
+    ""correctedTranslation"": ""<The correct/best {langName} translation>"",
+    ""wordByWordBreakdown"": ""<Word-by-word breakdown of the correct translation with Vietnamese meanings>"",
+    ""grammarNotes"": ""<Grammar explanations in Vietnamese>"",
+    ""alternativeTranslations"": [""<alternative1>"", ""<alternative2>""]
+}}";
+
+        var response = await CallGeminiAsync(prompt);
+        try
+        {
+            var json = ExtractJson(response);
+            var result = Newtonsoft.Json.JsonConvert.DeserializeObject<LinguaAI.Common.Models.TranslationCheckResponse>(json);
+            return result ?? new LinguaAI.Common.Models.TranslationCheckResponse { 
+                Feedback = "Không thể phân tích câu trả lời",
+                Score = 0
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking translation");
+            return new LinguaAI.Common.Models.TranslationCheckResponse { 
+                Feedback = "Lỗi khi kiểm tra câu trả lời: " + ex.Message,
+                Score = 0
+            };
         }
     }
 }

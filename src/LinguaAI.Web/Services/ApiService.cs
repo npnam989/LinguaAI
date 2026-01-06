@@ -18,6 +18,7 @@ public interface IApiService
     Task<List<ThemeItem>> GetThemesAsync();
     Task<string> TranscribeAudioAsync(byte[] audioData, string language, string mimeType = "audio/webm");
     Task<PracticeResponse?> GeneratePracticeExercisesAsync(PracticeRequest request);
+    Task<TranslationCheckResponse?> CheckTranslationAsync(TranslationCheckRequest request);
 }
 
 public class ApiService : IApiService
@@ -327,6 +328,19 @@ public class ApiService : IApiService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error generating practice exercises");
+            return null;
+        }
+    }
+
+    public async Task<TranslationCheckResponse?> CheckTranslationAsync(TranslationCheckRequest request)
+    {
+        try
+        {
+            return await SendWithAuthAsync<TranslationCheckResponse>(HttpMethod.Post, "/api/practice/check-translation", request);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking translation");
             return null;
         }
     }

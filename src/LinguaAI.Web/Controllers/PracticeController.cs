@@ -182,4 +182,15 @@ public class PracticeController : Controller
         
         return Json(result);
     }
+
+    [HttpPost]
+    public async Task<IActionResult> CheckTranslation([FromBody] TranslationCheckRequest request)
+    {
+        var result = await _apiService.CheckTranslationAsync(request);
+        
+        if (result == null)
+            return StatusCode(500, new { error = "Failed to check translation" });
+        
+        return Json(result);
+    }
 }

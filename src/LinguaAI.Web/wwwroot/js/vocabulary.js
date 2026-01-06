@@ -969,7 +969,7 @@ function getArrangeAnswer() {
     return words.join(' ');
 }
 
-function checkPracticeAnswer() {
+async function checkPracticeAnswer() {
     let userAnswer = '';
 
     if (currentPracticeType === 'fill_blank') {
@@ -994,17 +994,52 @@ function checkPracticeAnswer() {
 
     const exercise = practiceExercises[practiceIndex];
     let isCorrect = false;
+    let aiResponse = null;
 
-    // Normalize for comparison
-    const normUser = userAnswer.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
-    const normCorrect = exercise.correctAnswer.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
-
+    // For translation, use AI checking
     if (currentPracticeType === 'translate') {
-        // Simple fuzzy match or strict match? For MVP strict or simple contains
-        // Since we don't have LLM to grade translation here, we rely on exact match or provided answer
-        // Or we could send back to verify, but let's stick to simple string compare for now
-        isCorrect = normUser === normCorrect;
+        // Show loading state
+        const checkBtn = document.getElementById('practiceCheckBtn');
+        checkBtn.disabled = true;
+        checkBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang kiểm tra...';
+
+        try {
+            const language = document.getElementById('languageSelect').value;
+            const response = await fetch('/Practice/CheckTranslation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    originalText: exercise.question,
+                    userAnswer: userAnswer,
+                    language: language,
+                    expectedAnswer: exercise.correctAnswer
+                })
+            });
+
+            if (response.ok) {
+                aiResponse = await response.json();
+                isCorrect = aiResponse.isCorrect;
+            } else {
+                console.error('AI check failed');
+                // Fallback to string comparison
+                const normUser = userAnswer.toLowerCase().trim();
+                const normCorrect = exercise.correctAnswer.toLowerCase().trim();
+                isCorrect = normUser === normCorrect;
+            }
+        } catch (err) {
+            console.error('Error checking translation:', err);
+            // Fallback to string comparison
+            const normUser = userAnswer.toLowerCase().trim();
+            const normCorrect = exercise.correctAnswer.toLowerCase().trim();
+            isCorrect = normUser === normCorrect;
+        }
+
+        checkBtn.disabled = false;
+        checkBtn.innerHTML = 'Kiểm tra';
     } else {
+        // For other types, use string comparison
+        const normUser = userAnswer.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
+        const normCorrect = exercise.correctAnswer.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
         isCorrect = normUser === normCorrect;
     }
 
@@ -1023,29 +1058,72 @@ function checkPracticeAnswer() {
     feedbackHTML += `<p style="font-size: 1.1rem; font-weight: 600; color: ${isCorrect ? 'var(--accent-green)' : 'var(--accent-pink)'};">${escapeHtml(userAnswer)}</p>`;
     feedbackHTML += `</div>`;
 
-    // Show correct answer
-    feedbackHTML += `<div style="background: rgba(0,255,0,0.1); padding: 12px; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid var(--accent-green);">`;
-    feedbackHTML += `<p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 4px;">✅ Đáp án đúng:</p>`;
-    feedbackHTML += `<p style="font-size: 1.2rem; font-weight: 700; color: var(--accent-green);">${escapeHtml(exercise.correctAnswer)}</p>`;
-    feedbackHTML += `</div>`;
-
-    // Show bilingual explanation
-    if (exercise.explanation) {
-        feedbackHTML += `<div style="background: rgba(124, 58, 237, 0.1); padding: 12px; border-radius: 8px; border-left: 3px solid var(--primary-light);">`;
-        feedbackHTML += `<p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 8px;">📖 Giải thích:</p>`;
-
-        // Split explanation into lines for bilingual display
-        const explanationLines = exercise.explanation.split('\n').filter(line => line.trim());
-        explanationLines.forEach(line => {
-            feedbackHTML += `<p style="margin-bottom: 6px; line-height: 1.5;">${escapeHtml(line)}</p>`;
-        });
-
-        // Also show explanationVi if available separately
-        if (exercise.explanationVi && !exercise.explanation.includes(exercise.explanationVi)) {
-            feedbackHTML += `<p style="margin-top: 8px; color: var(--text-secondary);">🇻🇳 ${escapeHtml(exercise.explanationVi)}</p>`;
+    // Show correct answer / AI feedback
+    if (aiResponse) {
+        // AI-based feedback for translation
+        if (aiResponse.score >= 0) {
+            feedbackHTML += `<div style="background: rgba(124, 58, 237, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid var(--primary-light);">`;
+            feedbackHTML += `<p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 4px;">📊 Điểm: <strong>${aiResponse.score}/100</strong></p>`;
+            feedbackHTML += `</div>`;
         }
 
+        feedbackHTML += `<div style="background: rgba(0,255,0,0.1); padding: 12px; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid var(--accent-green);">`;
+        feedbackHTML += `<p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 4px;">✅ Bản dịch chuẩn:</p>`;
+        feedbackHTML += `<p style="font-size: 1.2rem; font-weight: 700; color: var(--accent-green);">${escapeHtml(aiResponse.correctedTranslation || exercise.correctAnswer)}</p>`;
         feedbackHTML += `</div>`;
+
+        if (aiResponse.feedback) {
+            feedbackHTML += `<div style="background: rgba(124, 58, 237, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 12px;">`;
+            feedbackHTML += `<p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 4px;">💬 Nhận xét:</p>`;
+            feedbackHTML += `<p style="line-height: 1.5;">${escapeHtml(aiResponse.feedback)}</p>`;
+            feedbackHTML += `</div>`;
+        }
+
+        if (aiResponse.wordByWordBreakdown) {
+            feedbackHTML += `<div style="background: rgba(59, 130, 246, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid #3b82f6;">`;
+            feedbackHTML += `<p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 4px;">📝 Phân tích từng từ:</p>`;
+            feedbackHTML += `<p style="line-height: 1.6; white-space: pre-wrap;">${escapeHtml(aiResponse.wordByWordBreakdown)}</p>`;
+            feedbackHTML += `</div>`;
+        }
+
+        if (aiResponse.grammarNotes) {
+            feedbackHTML += `<div style="background: rgba(234, 179, 8, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid #eab308;">`;
+            feedbackHTML += `<p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 4px;">📖 Ngữ pháp:</p>`;
+            feedbackHTML += `<p style="line-height: 1.5;">${escapeHtml(aiResponse.grammarNotes)}</p>`;
+            feedbackHTML += `</div>`;
+        }
+
+        if (aiResponse.alternativeTranslations && aiResponse.alternativeTranslations.length > 0) {
+            feedbackHTML += `<div style="background: rgba(16, 185, 129, 0.1); padding: 12px; border-radius: 8px; border-left: 3px solid #10b981;">`;
+            feedbackHTML += `<p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 4px;">🔄 Cách dịch khác:</p>`;
+            aiResponse.alternativeTranslations.forEach(alt => {
+                feedbackHTML += `<p style="margin-bottom: 4px;">• ${escapeHtml(alt)}</p>`;
+            });
+            feedbackHTML += `</div>`;
+        }
+    } else {
+        // Standard feedback for non-translate types
+        feedbackHTML += `<div style="background: rgba(0,255,0,0.1); padding: 12px; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid var(--accent-green);">`;
+        feedbackHTML += `<p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 4px;">✅ Đáp án đúng:</p>`;
+        feedbackHTML += `<p style="font-size: 1.2rem; font-weight: 700; color: var(--accent-green);">${escapeHtml(exercise.correctAnswer)}</p>`;
+        feedbackHTML += `</div>`;
+
+        // Show bilingual explanation
+        if (exercise.explanation) {
+            feedbackHTML += `<div style="background: rgba(124, 58, 237, 0.1); padding: 12px; border-radius: 8px; border-left: 3px solid var(--primary-light);">`;
+            feedbackHTML += `<p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 8px;">📖 Giải thích:</p>`;
+
+            const explanationLines = exercise.explanation.split('\n').filter(line => line.trim());
+            explanationLines.forEach(line => {
+                feedbackHTML += `<p style="margin-bottom: 6px; line-height: 1.5;">${escapeHtml(line)}</p>`;
+            });
+
+            if (exercise.explanationVi && !exercise.explanation.includes(exercise.explanationVi)) {
+                feedbackHTML += `<p style="margin-top: 8px; color: var(--text-secondary);">🇻🇳 ${escapeHtml(exercise.explanationVi)}</p>`;
+            }
+
+            feedbackHTML += `</div>`;
+        }
     }
 
     if (isCorrect) {
