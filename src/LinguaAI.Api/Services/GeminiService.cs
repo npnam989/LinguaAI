@@ -27,6 +27,7 @@ public class GeminiService : IGeminiService
     private readonly string _apiKey;
     private readonly ILogger<GeminiService> _logger;
     private const string BaseUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+    private readonly MongoService _mongoService;
 
     private static readonly Dictionary<string, string> LanguageNames = new()
     {
@@ -34,12 +35,6 @@ public class GeminiService : IGeminiService
         { "ko", "Korean" },
         { "zh", "Chinese (Mandarin)" }
     };
-
-    private readonly HttpClient _httpClient;
-    private readonly ILogger<GeminiService> _logger;
-    private readonly string _apiKey;
-    private readonly MongoService _mongoService;
-
     public GeminiService(IConfiguration config, ILogger<GeminiService> logger, MongoService mongoService)
     {
         _logger = logger;
