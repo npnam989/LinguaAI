@@ -2,7 +2,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using LinguaAI.Common.Models;
-using LinguaAI.Web.Models;
 
 namespace LinguaAI.Web.Services;
 
