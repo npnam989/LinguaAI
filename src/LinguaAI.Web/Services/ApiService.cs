@@ -254,19 +254,31 @@ public class ApiService : IApiService
     {
         try
         {
+            // Strip codec suffix from MIME type (e.g., "audio/webm;codecs=opus" -> "audio/webm")
+            var baseMimeType = mimeType.Split(';')[0].Trim();
+            if (string.IsNullOrEmpty(baseMimeType))
+            {
+                baseMimeType = "audio/webm";
+            }
+            
+            _logger.LogInformation("Transcribing audio: {Length} bytes, mimeType: {MimeType}, baseMimeType: {BaseMimeType}", 
+                audioData.Length, mimeType, baseMimeType);
+            
             // SpeechController expects IFormFile, so we need to send as multipart/form-data
             using var content = new MultipartFormDataContent();
             
             // Create a ByteArrayContent with proper MIME type
             var fileContent = new ByteArrayContent(audioData);
-            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(mimeType);
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(baseMimeType);
             
             // Add as file with extension matching MIME type
-            var extension = mimeType switch
+            var extension = baseMimeType switch
             {
                 "audio/webm" => ".webm",
                 "audio/mp4" => ".m4a",
                 "audio/wav" => ".wav",
+                "audio/mpeg" => ".mp3",
+                "audio/ogg" => ".ogg",
                 _ => ".webm"
             };
             content.Add(fileContent, "audio", $"recording{extension}");
@@ -274,11 +286,14 @@ public class ApiService : IApiService
             
             // Send directly to API
             var apiUrl = _config["ApiSettings:BaseUrl"]?.TrimEnd('/') + "/api/speech/transcribe";
+            _logger.LogInformation("Sending to API: {Url}", apiUrl);
+            
             var response = await _httpClient.PostAsync(apiUrl, content);
             
             if (response.IsSuccessStatusCode)
             {
                 var json = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation("API response: {Response}", json);
                 var result = JsonSerializer.Deserialize<SpeechTranscribeResult>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 return result?.Transcript ?? "";
             }
