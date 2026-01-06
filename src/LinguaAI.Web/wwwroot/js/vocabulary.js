@@ -450,26 +450,46 @@ async function startQuizRecording() {
     document.getElementById('quizRecordBtn').classList.add('recording-pulse');
 
     try {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Get fresh stream for each recording session
+        stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true
+            }
+        });
 
-        // Setup Visualizer
-        if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        // Setup AudioContext - must resume on user gesture
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        // Resume AudioContext if suspended (required by browsers)
+        if (audioContext.state === 'suspended') {
+            await audioContext.resume();
+        }
+
         analyser = audioContext.createAnalyser();
         const source = audioContext.createMediaStreamSource(stream);
         source.connect(analyser);
         analyser.fftSize = 256;
+
+        // Start visualizer
+        isRecording = true; // Set flag BEFORE starting visualizer
         drawVisualizer();
 
-        // Setup Recorder
-        mediaRecorder = new MediaRecorder(stream);
+        // Setup Recorder with proper MIME type
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
+        mediaRecorder = new MediaRecorder(stream, { mimeType });
         audioChunks = [];
 
         mediaRecorder.ondataavailable = event => {
             if (event.data.size > 0) audioChunks.push(event.data);
         };
 
-        mediaRecorder.start();
-        isRecording = true;
+        // Use timeslice to get data periodically
+        mediaRecorder.start(100);
+        console.log('Recording started with mimeType:', mimeType);
 
     } catch (err) {
         console.error('Microphone error:', err);
@@ -483,45 +503,64 @@ async function stopQuizRecordingAndSubmit() {
 
     // UI Update
     document.getElementById('quizRecordStatus').textContent = 'Đang phân tích...';
-    document.getElementById('quizRecordBtn').disabled = true; // Prevent double click
+    document.getElementById('quizRecordBtn').disabled = true;
     document.getElementById('quizRecordBtn').classList.remove('recording-pulse');
 
+    isRecording = false; // Stop visualizer loop
+
     // Stop Visualizer
-    if (visualizerFrame) cancelAnimationFrame(visualizerFrame);
+    if (visualizerFrame) {
+        cancelAnimationFrame(visualizerFrame);
+        visualizerFrame = null;
+    }
 
-    mediaRecorder.onstop = async () => {
-        // Stop all tracks
-        if (stream) stream.getTracks().forEach(track => track.stop());
-        isRecording = false;
+    // Return a promise that resolves when recording is processed
+    return new Promise((resolve) => {
+        mediaRecorder.onstop = async () => {
+            // Stop all tracks
+            if (stream) stream.getTracks().forEach(track => track.stop());
 
-        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            const mimeType = mediaRecorder.mimeType || 'audio/webm';
+            const audioBlob = new Blob(audioChunks, { type: mimeType });
+            console.log('Audio blob size:', audioBlob.size, 'type:', mimeType);
 
-        // Processing
-        const formData = new FormData();
-        formData.append('audio', audioBlob, 'recording.wav');
-        formData.append('language', document.getElementById('languageSelect').value);
+            if (audioBlob.size < 1000) {
+                console.warn('Audio blob too small, might be empty');
+                document.getElementById('quizRecordStatus').textContent = 'Không ghi được âm thanh. Thử lại.';
+                resetRecordingUI();
+                resolve();
+                return;
+            }
 
-        try {
-            const transRes = await fetch('/Practice/Transcribe', {
-                method: 'POST',
-                body: formData
-            });
+            // Processing
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'recording.webm');
+            formData.append('language', document.getElementById('languageSelect').value);
 
-            if (!transRes.ok) throw new Error('Transcription failed');
+            try {
+                const transRes = await fetch('/Practice/Transcribe', {
+                    method: 'POST',
+                    body: formData
+                });
 
-            const transData = await transRes.json();
-            const spokenText = transData.text || '';
+                if (!transRes.ok) throw new Error('Transcription failed');
 
-            checkQuizAnswer(spokenText);
+                const transData = await transRes.json();
+                const spokenText = transData.text || '';
+                console.log('Transcribed text:', spokenText);
 
-        } catch (err) {
-            console.error('Quiz processing error:', err);
-            document.getElementById('quizRecordStatus').textContent = 'Lỗi xử lý. Thử lại.';
-            resetRecordingUI();
-        }
-    };
+                checkQuizAnswer(spokenText);
 
-    mediaRecorder.stop();
+            } catch (err) {
+                console.error('Quiz processing error:', err);
+                document.getElementById('quizRecordStatus').textContent = 'Lỗi xử lý. Thử lại.';
+                resetRecordingUI();
+            }
+            resolve();
+        };
+
+        mediaRecorder.stop();
+    });
 }
 
 function resetRecordingUI() {
@@ -914,16 +953,52 @@ function checkPracticeAnswer() {
     const feedbackText = document.getElementById('practiceFeedbackText');
     const explanation = document.getElementById('practiceExplanation');
 
+    // Build detailed feedback HTML
+    let feedbackHTML = '';
+
+    // Show user's answer
+    feedbackHTML += `<div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; margin-bottom: 12px;">`;
+    feedbackHTML += `<p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 4px;">Câu trả lời của bạn:</p>`;
+    feedbackHTML += `<p style="font-size: 1.1rem; font-weight: 600; color: ${isCorrect ? 'var(--accent-green)' : 'var(--accent-pink)'};">${escapeHtml(userAnswer)}</p>`;
+    feedbackHTML += `</div>`;
+
+    // Show correct answer
+    feedbackHTML += `<div style="background: rgba(0,255,0,0.1); padding: 12px; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid var(--accent-green);">`;
+    feedbackHTML += `<p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 4px;">✅ Đáp án đúng:</p>`;
+    feedbackHTML += `<p style="font-size: 1.2rem; font-weight: 700; color: var(--accent-green);">${escapeHtml(exercise.correctAnswer)}</p>`;
+    feedbackHTML += `</div>`;
+
+    // Show bilingual explanation
+    if (exercise.explanation) {
+        feedbackHTML += `<div style="background: rgba(124, 58, 237, 0.1); padding: 12px; border-radius: 8px; border-left: 3px solid var(--primary-light);">`;
+        feedbackHTML += `<p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 8px;">📖 Giải thích:</p>`;
+
+        // Split explanation into lines for bilingual display
+        const explanationLines = exercise.explanation.split('\n').filter(line => line.trim());
+        explanationLines.forEach(line => {
+            feedbackHTML += `<p style="margin-bottom: 6px; line-height: 1.5;">${escapeHtml(line)}</p>`;
+        });
+
+        // Also show explanationVi if available separately
+        if (exercise.explanationVi && !exercise.explanation.includes(exercise.explanationVi)) {
+            feedbackHTML += `<p style="margin-top: 8px; color: var(--text-secondary);">🇻🇳 ${escapeHtml(exercise.explanationVi)}</p>`;
+        }
+
+        feedbackHTML += `</div>`;
+    }
+
     if (isCorrect) {
         practiceScore++;
         feedbackText.textContent = '✅ Chính xác!';
         feedbackText.style.color = 'var(--accent-green)';
+        feedbackDiv.style.background = 'rgba(34, 197, 94, 0.1)';
     } else {
         feedbackText.textContent = '❌ Chưa đúng';
         feedbackText.style.color = 'var(--accent-pink)';
+        feedbackDiv.style.background = 'rgba(236, 72, 153, 0.1)';
     }
     document.getElementById('practiceScore').textContent = practiceScore;
-    explanation.innerHTML = `Đáp án đúng: <strong>${exercise.correctAnswer}</strong><br>${exercise.explanation || ''}`;
+    explanation.innerHTML = feedbackHTML;
 
     document.getElementById('practiceCheckBtn').classList.add('hidden');
     document.getElementById('practiceNextBtn').classList.remove('hidden');

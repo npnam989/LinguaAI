@@ -463,7 +463,11 @@ Vocabulary to focus on (try to use these): {string.Join(", ", request.Words)}
 Requirements based on Type:
 1. fill_blank: Provide a sentence with the target word replaced by '_____'. CorrectAnswer is the missing word. Options should include the correct word and 3 distractors.
 2. arrange: Provide a sentence. The 'Options' list should contain the words of the sentence in SHUFFLED order. CorrectAnswer is the full correct sentence.
-3. translate: Provide a sentence in SOURCE language (e.g. {langName}) for the user to translate to their native language (assume Vietnamese context if not specified) OR vice versa. Actually, for this app, let's stick to: Provide a sentence in {langName}. CorrectAnswer is the Vietnamese translation. 'Options' is empty.
+3. translate: Provide a sentence in {langName} for the user to translate to Vietnamese. CorrectAnswer is the Vietnamese translation. 'Options' is empty.
+
+IMPORTANT: The explanation MUST be bilingual:
+- First line: explanation in {langName}
+- Second line: explanation in Vietnamese (Tiếng Việt)
 
 Respond in JSON format only:
 {{
@@ -472,7 +476,8 @@ Respond in JSON format only:
             ""question"": ""<The question text>"",
             ""correctAnswer"": ""<The correct answer>"",
             ""options"": [""<option1>"", ""...""],
-            ""explanation"": ""<Why is this correct?>"",
+            ""explanation"": ""<{langName} explanation here>\n<Vietnamese explanation here>"",
+            ""explanationVi"": ""<Vietnamese explanation>"",
             ""targetWord"": ""<The vocabulary word used, if any>""
         }}
     ]
