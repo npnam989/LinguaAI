@@ -16,6 +16,7 @@ public interface IApiService
     Task<ChatResponse?> ChatAsync(string language, string scenario, string message, List<ChatMessage> history);
     Task<List<ThemeItem>> GetThemesAsync();
     Task<string> TranscribeAudioAsync(byte[] audioData, string language);
+    Task<PracticeResponse?> GeneratePracticeExercisesAsync(PracticeRequest request);
 }
 
 public class ApiService : IApiService
@@ -279,7 +280,22 @@ public class ApiService : IApiService
             _logger.LogError(ex, "Error transcribing audio");
             return "";
         }
+            }
     }
+
+    public async Task<PracticeResponse?> GeneratePracticeExercisesAsync(PracticeRequest request)
+    {
+        try
+        {
+            return await SendWithAuthAsync<PracticeResponse>(HttpMethod.Post, "/api/practice/generate", request);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating practice exercises");
+            return null;
+        }
+    }
+}
 }
 
 public class TranscribeResponse 

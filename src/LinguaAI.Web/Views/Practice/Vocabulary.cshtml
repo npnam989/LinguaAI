@@ -74,6 +74,9 @@
             <button class="btn btn-secondary mode-btn" data-mode="quiz" onclick="switchMode('quiz')">
                 🎤 Kiểm tra nói
             </button>
+            <button class="btn btn-secondary mode-btn" data-mode="practice" onclick="switchMode('practice')">
+                ✍️ Luyện tập
+            </button>
         </div>
         <!-- Display Language for Quiz -->
         <div id="quizDisplayLangSelector" class="hidden" style="margin-top: var(--space-lg);">
@@ -160,7 +163,7 @@
                 
                 <!-- Controls -->
                 <div style="display: flex; gap: 1rem; justify-content: center; margin-top: auto; padding-top: var(--space-xl);">
-                    <button class="btn btn-secondary" onclick="showHint()">bulb Gợi ý</button>
+                    <button class="btn btn-secondary" onclick="showHint()">💡 Gợi ý</button>
                     <button class="btn btn-secondary" onclick="skipQuestion()">⏭️ Bỏ qua</button>
                 </div>
             </div>
@@ -221,11 +224,99 @@
         </div>
     </div>
 
+    <!-- Practice Area -->
+    <div id="practiceArea" class="hidden">
+        <div class="glass-panel text-center" style="max-width: 800px; margin: 0 auto; padding: var(--space-xl);">
+            <!-- Settings -->
+            <div id="practiceSettings">
+                <h2 class="text-gradient mb-4">✍️ Luyện tập từ vựng</h2>
+                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: var(--space-xl);">
+                    <select id="practiceLevel" class="input-field" style="width: auto;">
+                        <option value="Elementary">Sơ cấp</option>
+                        <option value="Intermediate">Trung cấp</option>
+                        <option value="Advanced">Cao cấp</option>
+                    </select>
+                    <select id="practiceType" class="input-field" style="width: auto;">
+                        <option value="fill_blank">Điền từ vào chỗ trống</option>
+                        <option value="arrange">Sắp xếp câu</option>
+                        <option value="translate">Biên dịch</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="startPractice()">Bắt đầu luyện tập</button>
+            </div>
+
+            <!-- Loading -->
+            <div id="practiceLoading" class="hidden">
+                <div class="spinner" style="margin: 0 auto var(--space-lg);"></div>
+                <p style="color: var(--text-muted);">Đang tạo bài tập...</p>
+            </div>
+
+            <!-- Quiz Interface -->
+            <div id="practiceQuiz" class="hidden">
+                <div style="margin-bottom: var(--space-lg);">
+                    <span style="color: var(--text-secondary);">Câu hỏi</span>
+                    <span id="practiceCurrentIndex" style="font-size: 1.5rem; font-weight: 600; color: var(--primary-light);">1</span>
+                    <span style="color: var(--text-muted);"> / </span>
+                    <span id="practiceTotalCount" style="font-size: 1.5rem; color: var(--text-muted);">5</span>
+                </div>
+
+                <!-- Score -->
+                <div style="position: absolute; top: var(--space-md); right: var(--space-md); background: rgba(0,0,0,0.2); padding: 5px 10px; border-radius: 20px;">
+                    Correct: <span id="practiceScore" style="color: var(--accent-green); font-weight: bold;">0</span>
+                </div>
+
+                <div class="card" style="margin-bottom: var(--space-xl); min-height: 150px; display: flex; align-items: center; justify-content: center;">
+                    <p id="practiceQuestion" style="font-size: 1.5rem; font-weight: 500; text-align: center;"></p>
+                </div>
+
+                <!-- Input Area (Dynamic based on type) -->
+                <div id="practiceInputArea" style="margin-bottom: var(--space-xl);">
+                    <!-- Multiple Choice / Fill Blank -->
+                    <div id="practiceOptions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;" class="hidden"></div>
+                    
+                    <!-- Arrange Words -->
+                    <div id="practiceArrange" class="hidden">
+                        <div id="practiceArrangeSource" style="display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-bottom: 1rem; min-height: 50px; border: 1px dashed var(--border-glass); padding: 10px; border-radius: 8px;"></div>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">Nhấn vào từ để sắp xếp</p>
+                        <div id="practiceArrangeTarget" style="display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; min-height: 50px; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 8px;"></div>
+                    </div>
+
+                    <!-- Text Input (Translate) -->
+                    <div id="practiceTranslate" class="hidden">
+                        <textarea id="practiceTranslateInput" class="input-field" rows="3" placeholder="Nhập câu dịch..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Feedback Area -->
+                <div id="practiceFeedback" class="hidden" style="margin-bottom: var(--space-lg); padding: var(--space-md); border-radius: 8px;">
+                    <p id="practiceFeedbackText" style="font-weight: 600; font-size: 1.2rem;"></p>
+                    <p id="practiceExplanation" style="color: var(--text-secondary); margin-top: 5px;"></p>
+                </div>
+
+                <!-- Controls -->
+                <div style="display: flex; gap: 1rem; justify-content: center;">
+                    <button id="practiceCheckBtn" class="btn btn-primary" onclick="checkPracticeAnswer()">Kiểm tra</button>
+                    <button id="practiceNextBtn" class="btn btn-secondary hidden" onclick="nextPracticeQuestion()">Câu tiếp theo ➡️</button>
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div id="practiceSummary" class="hidden">
+                <h3 class="mb-3">🎉 Hoàn thành!</h3>
+                <p style="font-size: 1.2rem; margin-bottom: var(--space-lg);">Bạn trả lời đúng <span id="practiceFinalScore" style="color: var(--accent-green); font-weight: bold;"></span> câu.</p>
+                <button class="btn btn-primary" onclick="resetPractice()">Làm bài khác</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Empty State -->
     <div id="emptyState" class="card text-center" style="padding: var(--space-3xl);">
         <p style="font-size: 3rem;">📚</p>
         <p style="color: var(--text-muted);">Chọn chủ đề hoặc tải file để bắt đầu học</p>
     </div>
+    
+    <!-- Spacing for bottom -->
+    <div style="height: 100px;"></div>
 </div>
 
 <style>

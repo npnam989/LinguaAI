@@ -167,5 +167,17 @@ public class PracticeController : Controller
         {
             return StatusCode(500, new { error = "Transcription failed: " + ex.Message });
         }
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> GeneratePractice([FromBody] PracticeRequest request)
+    {
+        var result = await _apiService.GeneratePracticeExercisesAsync(request);
+        
+        if (result == null)
+            return StatusCode(500, new { error = "Failed to generate practice exercises" });
+        
+        return Json(result);
     }
 }

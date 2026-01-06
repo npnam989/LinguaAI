@@ -2,9 +2,17 @@
 let vocabularyList = [];
 let currentIndex = 0;
 let vocabularySource = 'ai'; // 'ai' or 'file'
-let currentMode = 'flashcard'; // 'flashcard' or 'quiz'
+let currentMode = 'flashcard'; // 'flashcard', 'quiz', 'practice'
+
+// Practice state
+let practiceExercises = [];
+let practiceIndex = 0;
+let practiceScore = 0;
+let currentPracticeType = 'fill_blank';
+let originalArrangeSource = []; // For resetting arrange exercise
 
 // Quiz state
+
 let quizIndex = 0;
 let quizCorrect = 0;
 let quizWrong = 0;
@@ -42,6 +50,10 @@ document.addEventListener('DOMContentLoaded', () => {
 let mediaRecorder = null;
 let audioChunks = [];
 let isRecording = false;
+let audioContext;
+let analyser;
+let visualizerFrame;
+let stream;
 
 // Remove initQuickSpeechRecognition as we use MediaRecorder now
 
@@ -69,10 +81,17 @@ function switchMode(mode) {
     if (mode === 'flashcard') {
         document.getElementById('flashcardArea').classList.remove('hidden');
         document.getElementById('quizArea').classList.add('hidden');
+        document.getElementById('practiceArea').classList.add('hidden');
+        document.getElementById('quizDisplayLangSelector').classList.add('hidden');
+    } else if (mode === 'practice') {
+        document.getElementById('flashcardArea').classList.add('hidden');
+        document.getElementById('quizArea').classList.add('hidden');
+        document.getElementById('practiceArea').classList.remove('hidden');
         document.getElementById('quizDisplayLangSelector').classList.add('hidden');
     } else {
         document.getElementById('flashcardArea').classList.add('hidden');
         document.getElementById('quizArea').classList.remove('hidden');
+        document.getElementById('practiceArea').classList.add('hidden');
         document.getElementById('quizDisplayLangSelector').classList.remove('hidden');
         startQuiz();
     }
@@ -86,6 +105,7 @@ async function loadVocabulary() {
     document.getElementById('emptyState').classList.add('hidden');
     document.getElementById('flashcardArea').classList.add('hidden');
     document.getElementById('quizArea').classList.add('hidden');
+    document.getElementById('practiceArea').classList.add('hidden');
     document.getElementById('modeSelection').classList.add('hidden');
     document.getElementById('loadingArea').classList.remove('hidden');
 
@@ -127,6 +147,7 @@ async function handleFileUpload(event) {
     document.getElementById('emptyState').classList.add('hidden');
     document.getElementById('flashcardArea').classList.add('hidden');
     document.getElementById('quizArea').classList.add('hidden');
+    document.getElementById('practiceArea').classList.add('hidden');
     document.getElementById('modeSelection').classList.add('hidden');
     document.getElementById('loadingArea').classList.remove('hidden');
 
@@ -300,7 +321,6 @@ async function showQuizQuestion() {
     document.getElementById('quizHint').textContent = `Gợi ý: ${word.pronunciation || '...'}`;
     document.getElementById('quizHint').classList.add('hidden');
 
-    document.getElementById('quizAnswerArea').classList.add('hidden');
     document.getElementById('quizResultArea').classList.add('hidden');
     document.getElementById('quizRecordBtn').disabled = false;
     document.getElementById('quizRecordStatus').textContent = 'Nhấn để trả lời';
@@ -669,7 +689,6 @@ function showQuizSummary() {
 
     // Hide question UI
     document.getElementById('quizResultArea').classList.add('hidden');
-    document.getElementById('quizAnswerArea').classList.add('hidden');
 }
 
 function restartQuiz() {
@@ -711,3 +730,222 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+// ==================== PRACTICE MODE ====================
+
+async function startPractice() {
+    if (vocabularyList.length === 0) {
+        alert("Vui lòng tải từ vựng trước.");
+        return;
+    }
+
+    const level = document.getElementById('practiceLevel').value;
+    const type = document.getElementById('practiceType').value;
+    const language = document.getElementById('languageSelect').value;
+
+    document.getElementById('practiceSettings').classList.add('hidden');
+    document.getElementById('practiceLoading').classList.remove('hidden');
+    document.getElementById('practiceQuiz').classList.add('hidden');
+    document.getElementById('practiceSummary').classList.add('hidden');
+
+    try {
+        const wordList = vocabularyList.map(v => v.word);
+
+        const response = await fetch('/Practice/GeneratePractice', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                words: wordList,
+                language: language,
+                level: level,
+                type: type,
+                count: 5
+            })
+        });
+
+        if (!response.ok) throw new Error('Failed to generate practice');
+
+        const data = await response.json();
+        practiceExercises = data.exercises || [];
+        practiceIndex = 0;
+        practiceScore = 0;
+        currentPracticeType = type;
+
+        if (practiceExercises.length === 0) {
+            alert("Không thể tạo bài tập. Vui lòng thử lại.");
+            resetPractice();
+        } else {
+            document.getElementById('practiceLoading').classList.add('hidden');
+            showPracticeQuestion();
+        }
+
+    } catch (error) {
+        console.error('Practice generation error:', error);
+        alert('Lỗi tạo bài tập.');
+        resetPractice();
+    }
+}
+
+function showPracticeQuestion() {
+    if (practiceIndex >= practiceExercises.length) {
+        showPracticeSummary();
+        return;
+    }
+
+    const exercise = practiceExercises[practiceIndex];
+    document.getElementById('practiceQuiz').classList.remove('hidden');
+    document.getElementById('practiceSettings').classList.add('hidden');
+
+    document.getElementById('practiceCurrentIndex').textContent = practiceIndex + 1;
+    document.getElementById('practiceTotalCount').textContent = practiceExercises.length;
+    document.getElementById('practiceScore').textContent = practiceScore;
+    document.getElementById('practiceQuestion').textContent = exercise.question;
+
+    // Reset Input Areas
+    document.getElementById('practiceOptions').classList.add('hidden');
+    document.getElementById('practiceArrange').classList.add('hidden');
+    document.getElementById('practiceTranslate').classList.add('hidden');
+    document.getElementById('practiceFeedback').classList.add('hidden');
+    document.getElementById('practiceCheckBtn').classList.remove('hidden');
+    document.getElementById('practiceNextBtn').classList.add('hidden');
+
+    // Setup input based on type
+    if (currentPracticeType === 'fill_blank') {
+        const optionsDiv = document.getElementById('practiceOptions');
+        optionsDiv.classList.remove('hidden');
+        optionsDiv.innerHTML = exercise.options.map((opt, idx) => `
+            <button class="btn btn-secondary practice-option" onclick="selectPracticeOption(this, '${escapeHtml(opt)}')">${escapeHtml(opt)}</button>
+        `).join('');
+    } else if (currentPracticeType === 'arrange') {
+        document.getElementById('practiceArrange').classList.remove('hidden');
+        const sourceDiv = document.getElementById('practiceArrangeSource');
+        const targetDiv = document.getElementById('practiceArrangeTarget');
+        sourceDiv.innerHTML = '';
+        targetDiv.innerHTML = '';
+        originalArrangeSource = [...exercise.options];
+
+        exercise.options.forEach(word => {
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-sm btn-outline-secondary';
+            btn.textContent = word;
+            btn.onclick = () => moveWordToTarget(btn);
+            sourceDiv.appendChild(btn);
+        });
+    } else if (currentPracticeType === 'translate') {
+        document.getElementById('practiceTranslate').classList.remove('hidden');
+        document.getElementById('practiceTranslateInput').value = '';
+    }
+}
+
+let selectedOptionBtn = null;
+let selectedAnswer = '';
+
+function selectPracticeOption(btn, value) {
+    if (selectedOptionBtn) selectedOptionBtn.classList.remove('btn-primary');
+    selectedOptionBtn = btn;
+    selectedAnswer = value;
+    btn.classList.add('btn-primary');
+}
+
+function moveWordToTarget(btn) {
+    const targetDiv = document.getElementById('practiceArrangeTarget');
+    targetDiv.appendChild(btn);
+    btn.onclick = () => moveWordToSource(btn);
+    btn.classList.remove('btn-outline-secondary');
+    btn.classList.add('btn-primary');
+}
+
+function moveWordToSource(btn) {
+    const sourceDiv = document.getElementById('practiceArrangeSource');
+    sourceDiv.appendChild(btn);
+    btn.onclick = () => moveWordToTarget(btn);
+    btn.classList.remove('btn-primary');
+    btn.classList.add('btn-outline-secondary');
+}
+
+function getArrangeAnswer() {
+    const targetDiv = document.getElementById('practiceArrangeTarget');
+    const words = Array.from(targetDiv.children).map(btn => btn.textContent);
+    return words.join(' ');
+}
+
+function checkPracticeAnswer() {
+    let userAnswer = '';
+
+    if (currentPracticeType === 'fill_blank') {
+        if (!selectedAnswer) {
+            alert('Vui lòng chọn đáp án!');
+            return;
+        }
+        userAnswer = selectedAnswer;
+    } else if (currentPracticeType === 'arrange') {
+        userAnswer = getArrangeAnswer();
+        if (!userAnswer) {
+            alert('Vui lòng sắp xếp từ!');
+            return;
+        }
+    } else if (currentPracticeType === 'translate') {
+        userAnswer = document.getElementById('practiceTranslateInput').value.trim();
+        if (!userAnswer) {
+            alert('Vui lòng nhập câu dịch!');
+            return;
+        }
+    }
+
+    const exercise = practiceExercises[practiceIndex];
+    let isCorrect = false;
+
+    // Normalize for comparison
+    const normUser = userAnswer.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
+    const normCorrect = exercise.correctAnswer.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
+
+    if (currentPracticeType === 'translate') {
+        // Simple fuzzy match or strict match? For MVP strict or simple contains
+        // Since we don't have LLM to grade translation here, we rely on exact match or provided answer
+        // Or we could send back to verify, but let's stick to simple string compare for now
+        isCorrect = normUser === normCorrect;
+    } else {
+        isCorrect = normUser === normCorrect;
+    }
+
+    // Show Feedback
+    const feedbackDiv = document.getElementById('practiceFeedback');
+    feedbackDiv.classList.remove('hidden');
+    const feedbackText = document.getElementById('practiceFeedbackText');
+    const explanation = document.getElementById('practiceExplanation');
+
+    if (isCorrect) {
+        practiceScore++;
+        feedbackText.textContent = '✅ Chính xác!';
+        feedbackText.style.color = 'var(--accent-green)';
+    } else {
+        feedbackText.textContent = '❌ Chưa đúng';
+        feedbackText.style.color = 'var(--accent-pink)';
+    }
+    document.getElementById('practiceScore').textContent = practiceScore;
+    explanation.innerHTML = `Đáp án đúng: <strong>${exercise.correctAnswer}</strong><br>${exercise.explanation || ''}`;
+
+    document.getElementById('practiceCheckBtn').classList.add('hidden');
+    document.getElementById('practiceNextBtn').classList.remove('hidden');
+}
+
+function nextPracticeQuestion() {
+    practiceIndex++;
+    selectedOptionBtn = null;
+    selectedAnswer = '';
+    showPracticeQuestion();
+}
+
+function showPracticeSummary() {
+    document.getElementById('practiceQuiz').classList.add('hidden');
+    document.getElementById('practiceSummary').classList.remove('hidden');
+    document.getElementById('practiceSettings').classList.add('hidden');
+    document.getElementById('practiceFinalScore').textContent = `${practiceScore} / ${practiceExercises.length}`;
+}
+
+function resetPractice() {
+    document.getElementById('practiceSummary').classList.add('hidden');
+    document.getElementById('practiceSettings').classList.remove('hidden');
+    document.getElementById('practiceLoading').classList.add('hidden'); // Ensure loading is hidden
+}
+

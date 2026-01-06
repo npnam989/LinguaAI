@@ -14,6 +14,7 @@ public interface IGeminiService
     Task<string> TranslateAsync(string text, string targetLanguage);
     Task<List<(string word, string meaning, string pronunciation, string example)>> EnrichVocabularyAsync(List<(string word, string meaning)> items);
     Task<string> TranscribeAudioAsync(byte[] audioData, string language, string mimeType = "audio/wav");
+    Task<LinguaAI.Common.Models.PracticeResponse> GeneratePracticeExercisesAsync(LinguaAI.Common.Models.PracticeRequest request);
 }
 
 
@@ -442,5 +443,55 @@ Respond in JSON format only (no markdown):
             _logger.LogError(ex, "Error transcribing audio");
             return "";
         }
+            }
     }
+
+    public async Task<LinguaAI.Common.Models.PracticeResponse> GeneratePracticeExercisesAsync(LinguaAI.Common.Models.PracticeRequest request)
+    {
+        var langName = GetLanguageName(request.Language);
+        var typeDesc = request.Type switch
+        {
+            "fill_blank" => "Fill in the blank sentences",
+            "arrange" => "Sentences with shuffled words",
+            "translate" => "Sentences to translate",
+            _ => "General practice sentences"
+        };
+
+        var prompt = $@"Generate {request.Count} language practice exercises in {langName} for {request.Level} level.
+Type: {typeDesc} (Internal Type: {request.Type})
+Vocabulary to focus on (try to use these): {string.Join(", ", request.Words)}
+
+Requirements based on Type:
+1. fill_blank: Provide a sentence with the target word replaced by '_____'. CorrectAnswer is the missing word. Options should include the correct word and 3 distractors.
+2. arrange: Provide a sentence. The 'Options' list should contain the words of the sentence in SHUFFLED order. CorrectAnswer is the full correct sentence.
+3. translate: Provide a sentence in SOURCE language (e.g. {langName}) for the user to translate to their native language (assume Vietnamese context if not specified) OR vice versa. Actually, for this app, let's stick to: Provide a sentence in {langName}. CorrectAnswer is the Vietnamese translation. 'Options' is empty.
+
+Respond in JSON format only:
+{{
+    ""exercises"": [
+        {{
+            ""question"": ""<The question text>"",
+            ""correctAnswer"": ""<The correct answer>"",
+            ""options"": [""<option1>"", ""...""],
+            ""explanation"": ""<Why is this correct?>"",
+            ""targetWord"": ""<The vocabulary word used, if any>""
+        }}
+    ]
+}}";
+
+        var response = await CallGeminiAsync(prompt);
+        try
+        {
+            var json = ExtractJson(response);
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var result = JsonSerializer.Deserialize<LinguaAI.Common.Models.PracticeResponse>(json, options);
+            return result ?? new LinguaAI.Common.Models.PracticeResponse();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating practice exercises");
+            return new LinguaAI.Common.Models.PracticeResponse();
+        }
+    }
+}
 }
