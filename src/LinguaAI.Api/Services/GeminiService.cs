@@ -500,16 +500,25 @@ JSON Response format:
         var response = await CallGeminiAsync(prompt);
         try
         {
-            _logger.LogInformation("Raw practice response (first 500 chars): {Response}", 
-                response.Length > 500 ? response.Substring(0, 500) : response);
+            _logger.LogInformation("Raw practice response length: {Length}", response.Length);
             
             var json = ExtractJson(response);
             
-            // Additional cleanup for malformed JSON
-            json = json.Replace("\r\n", "\\n").Replace("\n", "\\n").Replace("\t", " ");
+            // Escape newlines inside JSON string values using regex
+            // Match content between quotes and escape any real newlines
+            json = System.Text.RegularExpressions.Regex.Replace(
+                json,
+                @"""([^""\\]*(?:\\.[^""\\]*)*)""",
+                m => {
+                    var content = m.Groups[1].Value
+                        .Replace("\r\n", "\\n")
+                        .Replace("\n", "\\n")
+                        .Replace("\r", "\\n")
+                        .Replace("\t", " ");
+                    return $"\"{content}\"";
+                });
             
-            _logger.LogInformation("Cleaned JSON (first 500 chars): {Json}", 
-                json.Length > 500 ? json.Substring(0, 500) : json);
+            _logger.LogInformation("JSON ready for parsing, length: {Length}", json.Length);
             
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             var result = JsonSerializer.Deserialize<LinguaAI.Common.Models.PracticeResponse>(json, options);
@@ -517,8 +526,7 @@ JSON Response format:
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating practice exercises. Response: {Response}", 
-                response.Length > 1000 ? response.Substring(0, 1000) : response);
+            _logger.LogError(ex, "Error generating practice exercises. Response length: {Length}", response.Length);
             return new LinguaAI.Common.Models.PracticeResponse();
         }
     }
