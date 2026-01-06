@@ -130,73 +130,83 @@
     </div>
 
     <!-- Speaking Quiz Area -->
-    <div id="quizArea" class="hidden text-center">
-        <!-- Quiz Progress -->
-        <div style="margin-bottom: var(--space-lg);">
-            <span style="color: var(--text-secondary);">Câu hỏi</span>
-            <span id="quizCurrentIndex" style="font-size: 1.5rem; font-weight: 600; color: var(--primary-light);"> 1</span>
-            <span style="color: var(--text-muted);"> / </span>
-            <span id="quizTotalCount" style="font-size: 1.5rem; color: var(--text-muted);">10</span>
-        </div>
-
-        <!-- Timer -->
-        <div style="margin-bottom: var(--space-xl);">
-            <div id="timerDisplay" style="font-size: 3rem; font-weight: 700; color: var(--accent-gold);">10</div>
-            <div style="width: 200px; height: 8px; background: var(--bg-card); border-radius: 4px; margin: 0 auto; overflow: hidden;">
-                <div id="timerBar" style="width: 100%; height: 100%; background: var(--gradient-primary); transition: width 0.1s linear;"></div>
-            </div>
-        </div>
-
-        <!-- Quiz Card - Shows meaning -->
-        <div class="card" style="max-width: 500px; margin: 0 auto var(--space-xl); padding: var(--space-2xl);">
-            <p id="quizMeaningLabel" style="color: var(--text-muted); margin-bottom: var(--space-sm);">Nghĩa tiếng Việt:</p>
-            <p id="quizMeaning" style="font-size: 2rem; font-weight: 700; color: var(--primary-light);"></p>
-            <p id="quizHint" class="hidden" style="color: var(--text-muted); margin-top: var(--space-md); font-size: 0.9rem;"></p>
-        </div>
-
-        <!-- Recording Button -->
-        <div style="margin-bottom: var(--space-xl);">
-            <button id="quizRecordBtn" class="btn btn-primary btn-icon" style="width: 100px; height: 100px; font-size: 2.5rem;" onclick="startQuizRecording()">
-                🎤
-            </button>
-            <p id="quizRecordStatus" style="color: var(--text-muted); margin-top: var(--space-md);">Nhấn để trả lời</p>
+    <div id="quizArea" class="hidden">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-xl); max-width: 1000px; margin: 0 auto;">
             
-            <!-- Volume Meter -->
-            <div style="margin-top: var(--space-md); display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-                <span style="font-size: 0.75rem; color: var(--text-muted);">🔇</span>
-                <div style="width: 150px; height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden;">
-                    <div id="volumeMeter" style="width: 0%; height: 100%; background: var(--accent-purple); transition: width 0.05s;"></div>
+            <!-- LEFT COLUMN: Question -->
+            <div class="glass-panel" style="display: flex; flex-direction: column; justify-content: center; min-height: 400px; padding: var(--space-xl);">
+                <!-- Quiz Progress -->
+                <div style="margin-bottom: var(--space-lg); text-align: center;">
+                    <span style="color: var(--text-secondary);">Câu hỏi</span>
+                    <span id="quizCurrentIndex" style="font-size: 1.5rem; font-weight: 600; color: var(--primary-light);">1</span>
+                    <span style="color: var(--text-muted);"> / </span>
+                    <span id="quizTotalCount" style="font-size: 1.5rem; color: var(--text-muted);">10</span>
                 </div>
-                <span style="font-size: 0.75rem; color: var(--text-muted);">🔊</span>
+
+                <!-- Timer -->
+                <div style="margin-bottom: var(--space-xl); text-align: center;">
+                    <div id="timerDisplay" style="font-size: 3rem; font-weight: 700; color: var(--accent-gold);">10</div>
+                    <div style="width: 200px; height: 8px; background: var(--bg-card); border-radius: 4px; margin: 0 auto; overflow: hidden;">
+                        <div id="timerBar" style="width: 100%; height: 100%; background: var(--gradient-primary); transition: width 0.1s linear;"></div>
+                    </div>
+                </div>
+
+                <!-- Meaning & Hint -->
+                <div style="text-align: center;">
+                    <p id="quizMeaningLabel" style="color: var(--text-muted); margin-bottom: var(--space-sm);">Nghĩa tiếng Việt:</p>
+                    <p id="quizMeaning" style="font-size: 2.5rem; font-weight: 700; color: var(--primary-text); line-height: 1.4;"></p>
+                    <p id="quizHint" class="hidden" style="color: var(--text-muted); margin-top: var(--space-md); font-size: 1.1rem; font-style: italic;"></p>
+                </div>
+                
+                <!-- Controls -->
+                <div style="display: flex; gap: 1rem; justify-content: center; margin-top: auto; padding-top: var(--space-xl);">
+                    <button class="btn btn-secondary" onclick="showHint()">bulb Gợi ý</button>
+                    <button class="btn btn-secondary" onclick="skipQuestion()">⏭️ Bỏ qua</button>
+                </div>
             </div>
-            <button onclick="calibrateNoise()" style="margin-top: var(--space-sm); font-size: 0.75rem; padding: 0.25rem 0.5rem; background: transparent; color: var(--text-muted); border: 1px solid var(--text-muted); border-radius: 4px; cursor: pointer;">
-                🔇 Hiệu chỉnh tiếng ồn
-            </button>
+
+            <!-- RIGHT COLUMN: Interaction -->
+            <div class="glass-panel" style="display: flex; flex-direction: column; justify-content: center; min-height: 400px; padding: var(--space-xl);">
+                
+                <!-- Main Action Area -->
+                <div style="text-align: center; margin-bottom: var(--space-lg);">
+                    
+                    <!-- Visualizer Canvas -->
+                    <canvas id="quizVisualizer" width="300" height="100" style="width: 100%; height: 100px; margin-bottom: var(--space-lg);"></canvas>
+                    
+                    <!-- Record Button -->
+                    <button id="quizRecordBtn" class="btn btn-primary btn-icon" style="width: 120px; height: 120px; font-size: 3rem; border-radius: 50%; box-shadow: 0 0 20px rgba(124, 58, 237, 0.3);" onclick="toggleQuizRecording()">
+                        🎤
+                    </button>
+                    <p id="quizRecordStatus" style="color: var(--text-muted); margin-top: var(--space-md); font-weight: 500;">Nhấn để bắt đầu nói</p>
+                </div>
+
+                <!-- User Answer & Result -->
+                <div id="quizResultWrapper" class="hidden" style="animation: slideUp 0.3s ease;">
+                    <div style="background: var(--bg-card); border-radius: 12px; padding: var(--space-md); margin-bottom: var(--space-md);">
+                        <p style="color: var(--text-secondary); font-size: 0.9rem;">Bạn nói:</p>
+                        <p id="quizUserAnswer" style="font-size: 1.25rem; font-weight: 600; color: var(--primary-text);"></p>
+                    </div>
+
+                    <!-- Analysis Result -->
+                    <div id="quizResultArea" class="hidden text-center">
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: var(--space-sm);">
+                            <span id="quizResultIcon" style="font-size: 2.5rem;"></span>
+                            <span id="quizResultText" style="font-size: 1.5rem; font-weight: 700;"></span>
+                        </div>
+                        <div id="quizCorrectAnswer" style="text-align: left; background: rgba(0,0,0,0.2); padding: var(--space-md); border-radius: 8px;"></div>
+                        <div style="display: flex; gap: 10px; margin-top: var(--space-md);">
+                            <button id="quizRetryBtn" class="btn btn-secondary hidden" style="flex: 1;" onclick="retryQuizQuestion()">🔄 Thử lại (<span id="quizRetryCount">2</span>)</button>
+                            <button class="btn btn-primary" style="flex: 1;" onclick="nextQuizQuestion()">Câu tiếp theo ➡️</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- User Answer -->
-        <div id="quizAnswerArea" class="hidden" style="margin-bottom: var(--space-xl);">
-            <p style="color: var(--text-secondary);">Bạn nói:</p>
-            <p id="quizUserAnswer" style="font-size: 1.5rem; font-weight: 600;"></p>
-        </div>
-
-        <!-- Result -->
-        <div id="quizResultArea" class="hidden">
-            <div id="quizResultIcon" style="font-size: 4rem; margin-bottom: var(--space-md);"></div>
-            <p id="quizResultText" style="font-size: 1.25rem; font-weight: 600;"></p>
-            <p id="quizCorrectAnswer" style="color: var(--text-muted); margin-top: var(--space-sm);"></p>
-            <button class="btn btn-primary mt-3" onclick="nextQuizQuestion()">Câu tiếp theo ➡️</button>
-        </div>
-
-        <!-- Quiz Controls -->
-        <div style="display: flex; gap: 1rem; justify-content: center; margin-top: var(--space-xl);">
-            <button class="btn btn-secondary" onclick="showHint()">💡 Gợi ý</button>
-            <button class="btn btn-secondary" onclick="skipQuestion()">⏭️ Bỏ qua</button>
-        </div>
-
-        <!-- Score Summary -->
-        <div id="quizScoreSummary" class="hidden card" style="margin-top: var(--space-2xl); padding: var(--space-xl);">
-            <h3 class="mb-3">📊 Kết quả</h3>
+        <!-- Score Summary (Overlay or replace content) -->
+        <div id="quizScoreSummary" class="hidden card" style="margin-top: var(--space-2xl); padding: var(--space-xl); text-align: center;">
+            <h3 class="mb-3">📊 Kết quả bài kiểm tra</h3>
             <div style="display: flex; justify-content: center; gap: var(--space-2xl);">
                 <div>
                     <p style="font-size: 3rem; font-weight: 700; color: var(--accent-green);" id="correctCount">0</p>

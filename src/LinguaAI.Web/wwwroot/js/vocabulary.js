@@ -10,6 +10,7 @@ let quizCorrect = 0;
 let quizWrong = 0;
 let quizTimer = null;
 let quizTimeLeft = 15;
+let quizRetriesLeft = 2;
 let quizRecognition = null;
 const QUIZ_TIME_LIMIT = 15; // seconds
 
@@ -304,7 +305,33 @@ async function showQuizQuestion() {
     document.getElementById('quizRecordBtn').disabled = false;
     document.getElementById('quizRecordStatus').textContent = 'Nhấn để trả lời';
 
+    // Reset retries
+    quizRetriesLeft = 2;
+    document.getElementById('quizRetryCount').textContent = quizRetriesLeft;
+    document.getElementById('quizRetryBtn').classList.add('hidden');
+
     // Start timer
+    startQuizTimer();
+}
+
+function retryQuizQuestion() {
+    if (quizRetriesLeft <= 0) return;
+
+    quizRetriesLeft--;
+    document.getElementById('quizRetryCount').textContent = quizRetriesLeft;
+
+    // Reset UI for retry
+    document.getElementById('quizResultWrapper').classList.add('hidden');
+    document.getElementById('quizResultArea').classList.add('hidden');
+    document.getElementById('quizRecordBtn').disabled = false;
+    document.getElementById('quizRecordStatus').textContent = 'Nhấn để trả lời (Thử lại)';
+
+    // Clear visualizer
+    const canvas = document.getElementById('quizVisualizer');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Restart timer
     startQuizTimer();
 }
 
@@ -373,10 +400,6 @@ function updateTimerDisplay() {
 
 function timeUp() {
     stopQuizRecording();
-    quizWrong++;
-
-    const word = vocabularyList[quizIndex];
-    document.getElementById('quizResultIcon').textContent = '⏰';
     document.getElementById('quizResultText').textContent = 'Hết giờ!';
     document.getElementById('quizResultText').style.color = 'var(--accent-pink)';
     document.getElementById('quizCorrectAnswer').textContent = `Đáp án: ${word.word} (${word.pronunciation || ''})`;
@@ -384,92 +407,164 @@ function timeUp() {
     document.getElementById('quizRecordBtn').disabled = true;
 }
 
-async function startQuizRecording() {
-    if (isRecording) return;
-    
-    // Request microphone
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        audioChunks = [];
-        
-        mediaRecorder.ondataavailable = (event) => {
-            if (event.data.size > 0) {
-                audioChunks.push(event.data);
-            }
-        };
-        
-        mediaRecorder.onstop = async () => {
-            // Processing after stop
-            document.getElementById('quizRecordStatus').textContent = 'Đang phân tích...';
-            
-            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' }); // or audio/webm depending on browser
-            
-            // Send to Transcribe
-            const formData = new FormData();
-            formData.append('audio', audioBlob, 'recording.wav');
-            formData.append('language', document.getElementById('languageSelect').value);
-            
-            try {
-                const transRes = await fetch('/Practice/Transcribe', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                if (!transRes.ok) throw new Error('Transcription failed');
-                
-                const transData = await transRes.json();
-                const spokenText = transData.text || '';
-                
-                checkQuizAnswer(spokenText);
-                
-            } catch (err) {
-                console.error('Quiz processing error:', err);
-                document.getElementById('quizRecordStatus').textContent = 'Lỗi xử lý. Thử lại.';
-                checkQuizAnswer(''); // Handle error state
-            }
-            
-            // Stop tracks
-            stream.getTracks().forEach(track => track.stop());
-        };
-        
-        mediaRecorder.start();
-        isRecording = true;
-        
-        document.getElementById('quizRecordBtn').style.background = 'var(--accent-pink)';
-        document.getElementById('quizRecordBtn').textContent = '⏹️'; // Stop icon
-        document.getElementById('quizRecordStatus').textContent = 'Đang ghi âm... Nhấn để dừng';
-        
-        // Visualize volume (simplified)
-        // Note: Real visualization requires AudioContext, omitted for brevity but can be kept if already implemented
-        
-    } catch (err) {
-        console.error('Microphone error:', err);
-        alert('Không thể truy cập microphone: ' + err.message);
+// Audio recording & Visualizer
+
+
+async function toggleQuizRecording() {
+    if (isRecording) {
+        await stopQuizRecordingAndSubmit();
+    } else {
+        await startQuizRecording();
     }
 }
 
-function stopQuizRecording() {
-    if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-        isRecording = false;
-        
-        document.getElementById('quizRecordBtn').style.background = '';
-        document.getElementById('quizRecordBtn').textContent = '🎤';
-        document.getElementById('quizRecordBtn').disabled = true; // Disable until processed
+async function startQuizRecording() {
+    if (isRecording) return;
+
+    // UI Reset
+    document.getElementById('quizResultWrapper').classList.add('hidden');
+    document.getElementById('quizResultArea').classList.add('hidden');
+    document.getElementById('quizRecordStatus').textContent = 'Đang ghi âm...';
+    document.getElementById('quizRecordBtn').textContent = '⏹️';
+    document.getElementById('quizRecordBtn').style.background = 'var(--accent-pink)';
+    document.getElementById('quizRecordBtn').classList.add('recording-pulse');
+
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        // Setup Visualizer
+        if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaStreamSource(stream);
+        source.connect(analyser);
+        analyser.fftSize = 256;
+        drawVisualizer();
+
+        // Setup Recorder
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = event => {
+            if (event.data.size > 0) audioChunks.push(event.data);
+        };
+
+        mediaRecorder.start();
+        isRecording = true;
+
+    } catch (err) {
+        console.error('Microphone error:', err);
+        alert('Không thể truy cập microphone: ' + err.message);
+        resetRecordingUI();
     }
+}
+
+async function stopQuizRecordingAndSubmit() {
+    if (!isRecording || !mediaRecorder) return;
+
+    // UI Update
+    document.getElementById('quizRecordStatus').textContent = 'Đang phân tích...';
+    document.getElementById('quizRecordBtn').disabled = true; // Prevent double click
+    document.getElementById('quizRecordBtn').classList.remove('recording-pulse');
+
+    // Stop Visualizer
+    if (visualizerFrame) cancelAnimationFrame(visualizerFrame);
+
+    mediaRecorder.onstop = async () => {
+        // Stop all tracks
+        if (stream) stream.getTracks().forEach(track => track.stop());
+        isRecording = false;
+
+        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+
+        // Processing
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'recording.wav');
+        formData.append('language', document.getElementById('languageSelect').value);
+
+        try {
+            const transRes = await fetch('/Practice/Transcribe', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!transRes.ok) throw new Error('Transcription failed');
+
+            const transData = await transRes.json();
+            const spokenText = transData.text || '';
+
+            checkQuizAnswer(spokenText);
+
+        } catch (err) {
+            console.error('Quiz processing error:', err);
+            document.getElementById('quizRecordStatus').textContent = 'Lỗi xử lý. Thử lại.';
+            resetRecordingUI();
+        }
+    };
+
+    mediaRecorder.stop();
+}
+
+function resetRecordingUI() {
+    isRecording = false;
+    document.getElementById('quizRecordBtn').textContent = '🎤';
+    document.getElementById('quizRecordBtn').style.background = '';
+    document.getElementById('quizRecordBtn').disabled = false;
+    document.getElementById('quizRecordStatus').textContent = 'Nhấn để bắt đầu nói';
+    // Clear canvas
+    const canvas = document.getElementById('quizVisualizer');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function drawVisualizer() {
+    const canvas = document.getElementById('quizVisualizer');
+    const ctx = canvas.getContext('2d');
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    const draw = () => {
+        if (!isRecording) return;
+        visualizerFrame = requestAnimationFrame(draw);
+        analyser.getByteTimeDomainData(dataArray);
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0)'; // Transparent background
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#a855f7'; // Purple accent
+        ctx.beginPath();
+
+        const sliceWidth = canvas.width * 1.0 / bufferLength;
+        let x = 0;
+
+        for (let i = 0; i < bufferLength; i++) {
+            const v = dataArray[i] / 128.0;
+            const y = v * canvas.height / 2;
+
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+
+            x += sliceWidth;
+        }
+
+        ctx.lineTo(canvas.width, canvas.height / 2);
+        ctx.stroke();
+    };
+
+    draw();
 }
 
 async function checkQuizAnswer(spokenText) {
     clearInterval(quizTimer);
-    
+    resetRecordingUI(); // Reset button to mic icon
+
     const word = vocabularyList[quizIndex];
     const targetWordList = word.word.split(/[\/|;,\\=]/).map(s => s.trim());
-    
-    // Find best match synonym for evaluation target
+
+    // Find best match
     let targetForEval = targetWordList[0];
     let minDist = 999;
-    
+
     if (spokenText) {
         targetWordList.forEach(t => {
             const dist = levenshteinDistance(t.toLowerCase(), spokenText.toLowerCase());
@@ -480,12 +575,12 @@ async function checkQuizAnswer(spokenText) {
         });
     }
 
-    // Show user's answer
+    // Show Result UI
+    const resultWrapper = document.getElementById('quizResultWrapper');
+    resultWrapper.classList.remove('hidden');
     document.getElementById('quizUserAnswer').textContent = spokenText || '(Không nghe rõ)';
-    document.getElementById('quizAnswerArea').classList.remove('hidden');
-    document.getElementById('quizRecordStatus').textContent = 'Đang chấm điểm...';
 
-    // Call EvaluatePronunciation
+    // Evaluate
     try {
         const evalRes = await fetch('/Practice/EvaluatePronunciation', {
             method: 'POST',
@@ -496,58 +591,61 @@ async function checkQuizAnswer(spokenText) {
                 spokenText: spokenText
             })
         });
-        
+
         const result = await evalRes.json();
-        
-        // Determine Pass/Fail based on Evaluation Score
         const isCorrect = result.score >= 70;
-        
+
         if (isCorrect) {
             quizCorrect++;
             document.getElementById('quizResultIcon').textContent = '✅';
-            document.getElementById('quizResultText').textContent = 'Chính xác!';
+            document.getElementById('quizResultText').textContent = 'Xuất sắc!';
             document.getElementById('quizResultText').style.color = 'var(--accent-green)';
         } else {
             quizWrong++;
             document.getElementById('quizResultIcon').textContent = '❌';
-            document.getElementById('quizResultText').textContent = 'Chưa chính xác';
+            document.getElementById('quizResultText').textContent = 'Cần cố gắng';
             document.getElementById('quizResultText').style.color = 'var(--accent-pink)';
         }
-        
-        // Show detailed feedback properly formatted
-        const feedbackHtml = `
-            <div style="margin-top: 10px; font-size: 0.9em; color: var(--text-secondary);">
-                <p>Điểm: <strong>${result.score}%</strong></p>
-                <p>Nhận xét: ${result.feedback || ''}</p>
-                <p>Gợi ý: ${targetForEval}</p>
+
+        document.getElementById('quizCorrectAnswer').innerHTML = `
+            <div style="font-size: 0.95rem;">
+                <p><strong>Điểm số:</strong> <span style="font-size: 1.2em; color: ${isCorrect ? 'var(--accent-green)' : 'var(--accent-pink)'}">${result.score}%</span></p>
+                <div style="margin-top: 8px;"><strong>Chi tiết:</strong> ${result.feedback || 'Không có nhận xét'}</div>
+                <div style="margin-top: 8px; color: var(--text-secondary);">Gợi ý: ${targetForEval}</div>
             </div>
         `;
-        
-        document.getElementById('quizCorrectAnswer').innerHTML = feedbackHtml;
-        
+
+        // Show/Hide Retry button
+        if (quizRetriesLeft > 0) {
+            document.getElementById('quizRetryBtn').classList.remove('hidden');
+        } else {
+            document.getElementById('quizRetryBtn').classList.add('hidden');
+        }
+
     } catch (err) {
         console.error('Evaluation error:', err);
-        // Fallback logic
-        const fallbackCorrect = targetWordList.some(t => 
-            t.toLowerCase() === spokenText.toLowerCase() || 
+        // Fallback
+        const fallbackCorrect = targetWordList.some(t =>
+            t.toLowerCase() === spokenText.toLowerCase() ||
             levenshteinDistance(t.toLowerCase(), spokenText.toLowerCase()) <= 2
         );
-        
+
         if (fallbackCorrect) {
             quizCorrect++;
             document.getElementById('quizResultIcon').textContent = '✅';
+            document.getElementById('quizResultText').textContent = 'Đúng';
         } else {
             quizWrong++;
             document.getElementById('quizResultIcon').textContent = '❌';
+            document.getElementById('quizResultText').textContent = 'Sai';
         }
+        document.getElementById('quizCorrectAnswer').innerHTML = `<p>Đáp án: ${word.word}</p>`;
     }
 
     document.getElementById('quizResultArea').classList.remove('hidden');
-    document.getElementById('quizRecordBtn').disabled = true; // Stay disabled until next question
 }
 
 function nextQuizQuestion() {
-    quizIndex++;
     showQuizQuestion();
 }
 
