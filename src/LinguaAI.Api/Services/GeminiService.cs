@@ -540,21 +540,26 @@ Evaluate the student's translation and provide detailed feedback.
 Be lenient - accept translations that convey the same meaning even if they differ from the reference.
 Consider synonyms, different sentence structures, and colloquial expressions as acceptable.
 
-Respond in JSON format only:
+RESPOND IN PLAIN JSON FORMAT ONLY. Do not use Markdown code blocks.
 {{
-    ""isCorrect"": true/false (true if the translation is acceptable, even if not identical to reference),
-    ""score"": <0-100 score>,
-    ""feedback"": ""<Brief feedback in Vietnamese about the translation quality>"",
-    ""correctedTranslation"": ""<The correct/best {langName} translation>"",
-    ""wordByWordBreakdown"": ""<Word-by-word breakdown of the correct translation with Vietnamese meanings>"",
-    ""grammarNotes"": ""<Grammar explanations in Vietnamese>"",
-    ""alternativeTranslations"": [""<alternative1>"", ""<alternative2>""]
+    ""isCorrect"": true/false,
+    ""score"": <0-100>,
+    ""feedback"": ""<Feedback in Vietnamese>"",
+    ""correctedTranslation"": ""<The correct translation>"",
+    ""wordByWordBreakdown"": ""<A SINGLE STRING describing the breakdown, NOT an object. Example: 'Word1: Meaning1, Word2: Meaning2'>"".
+    ""grammarNotes"": ""<Grammar notes in Vietnamese>"",
+    ""alternativeTranslations"": [""<alt1>"", ""<alt2>""]
 }}";
 
         var response = await CallGeminiAsync(prompt);
         try
         {
+            _logger.LogInformation("Raw check response: {Response}", response);
             var json = ExtractJson(response);
+            
+            // Clean up common JSON issues
+            json = json.Replace("\t", " ");
+            
             var result = Newtonsoft.Json.JsonConvert.DeserializeObject<LinguaAI.Common.Models.TranslationCheckResponse>(json);
             return result ?? new LinguaAI.Common.Models.TranslationCheckResponse { 
                 Feedback = "Không thể phân tích câu trả lời",
@@ -563,9 +568,9 @@ Respond in JSON format only:
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error checking translation");
+            _logger.LogError(ex, "Error checking translation. Response: {Response}", response);
             return new LinguaAI.Common.Models.TranslationCheckResponse { 
-                Feedback = "Lỗi khi kiểm tra câu trả lời: " + ex.Message,
+                Feedback = "Lỗi hệ thống: " + ex.Message,
                 Score = 0
             };
         }
