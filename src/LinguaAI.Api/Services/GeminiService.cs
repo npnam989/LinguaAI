@@ -500,14 +500,25 @@ JSON Response format:
         var response = await CallGeminiAsync(prompt);
         try
         {
+            _logger.LogInformation("Raw practice response (first 500 chars): {Response}", 
+                response.Length > 500 ? response.Substring(0, 500) : response);
+            
             var json = ExtractJson(response);
+            
+            // Additional cleanup for malformed JSON
+            json = json.Replace("\r\n", "\\n").Replace("\n", "\\n").Replace("\t", " ");
+            
+            _logger.LogInformation("Cleaned JSON (first 500 chars): {Json}", 
+                json.Length > 500 ? json.Substring(0, 500) : json);
+            
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             var result = JsonSerializer.Deserialize<LinguaAI.Common.Models.PracticeResponse>(json, options);
             return result ?? new LinguaAI.Common.Models.PracticeResponse();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating practice exercises");
+            _logger.LogError(ex, "Error generating practice exercises. Response: {Response}", 
+                response.Length > 1000 ? response.Substring(0, 1000) : response);
             return new LinguaAI.Common.Models.PracticeResponse();
         }
     }
