@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
+using Newtonsoft.Json;
 using LinguaAI.Common.Models;
 
 namespace LinguaAI.Web.Services;
@@ -79,8 +79,7 @@ public class ApiService : IApiService
             
             if (response.IsSuccessStatusCode)
             {
-                return System.Text.Json.JsonSerializer.Deserialize<VocabularyResponse>(responseBody, 
-                    new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                return JsonConvert.DeserializeObject<VocabularyResponse>(responseBody);
             }
             
             _logger.LogWarning("Upload failed: {Status} - {Body}", response.StatusCode, responseBody);
@@ -295,7 +294,7 @@ public class ApiService : IApiService
             {
                 var json = await response.Content.ReadAsStringAsync();
                 _logger.LogInformation("API response: {Response}", json);
-                var result = JsonSerializer.Deserialize<SpeechTranscribeResult>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var result = JsonConvert.DeserializeObject<SpeechTranscribeResult>(json);
                 return result?.Transcript ?? "";
             }
             else

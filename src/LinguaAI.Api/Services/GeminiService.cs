@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
-using System.Text.Json;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace LinguaAI.Api.Services;
 
@@ -56,7 +57,7 @@ public class GeminiService : IGeminiService
             }
         };
 
-        var json = JsonSerializer.Serialize(requestBody);
+        var json = JsonConvert.SerializeObject(requestBody);
         
         // Retry with exponential backoff for rate limiting
         int maxRetries = 3;
@@ -70,13 +71,8 @@ public class GeminiService : IGeminiService
 
             if (response.IsSuccessStatusCode)
             {
-                using var doc = JsonDocument.Parse(responseText);
-                var text = doc.RootElement
-                    .GetProperty("candidates")[0]
-                    .GetProperty("content")
-                    .GetProperty("parts")[0]
-                    .GetProperty("text")
-                    .GetString();
+                var doc = JObject.Parse(responseText);
+                var text = doc["candidates"]?[0]?["content"]?["parts"]?[0]?["text"]?.ToString();
 
                 return text ?? "";
             }
@@ -140,23 +136,23 @@ Respond in JSON format only (no markdown):
         try
         {
             var json = ExtractJson(response);
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
+            var root = JObject.Parse(json);
             
             var words = new List<(string, bool, string)>();
-            if (root.TryGetProperty("words", out var wordsEl))
+            var wordsEl = root["words"] as JArray;
+            if (wordsEl != null)
             {
-                words = wordsEl.EnumerateArray().Select(x => (
-                    x.GetProperty("word").GetString() ?? "",
-                    x.GetProperty("correct").GetBoolean(),
-                    x.TryGetProperty("error", out var err) ? err.GetString() ?? "" : ""
+                words = wordsEl.Select(x => (
+                    x["word"]?.ToString() ?? "",
+                    x["correct"]?.Value<bool>() ?? false,
+                    x["error"]?.ToString() ?? ""
                 )).ToList();
             }
 
             return (
-                root.GetProperty("score").GetInt32(),
-                root.GetProperty("feedback").GetString() ?? "",
-                root.GetProperty("corrections").EnumerateArray().Select(x => x.GetString() ?? "").ToList(),
+                root["score"]?.Value<int>() ?? 0,
+                root["feedback"]?.ToString() ?? "",
+                (root["corrections"] as JArray)?.Select(x => x.ToString()).ToList() ?? new List<string>(),
                 words
             );
         }
@@ -186,16 +182,15 @@ Respond in JSON format only (no markdown):
         try
         {
             var json = ExtractJson(response);
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
+            var root = JObject.Parse(json);
             return (
-                root.GetProperty("correctedText").GetString() ?? text,
-                root.GetProperty("corrections").EnumerateArray().Select(x => (
-                    x.GetProperty("original").GetString() ?? "",
-                    x.GetProperty("corrected").GetString() ?? "",
-                    x.GetProperty("explanation").GetString() ?? ""
-                )).ToList(),
-                root.GetProperty("suggestions").EnumerateArray().Select(x => x.GetString() ?? "").ToList()
+                root["correctedText"]?.ToString() ?? text,
+                (root["corrections"] as JArray)?.Select(x => (
+                    x["original"]?.ToString() ?? "",
+                    x["corrected"]?.ToString() ?? "",
+                    x["explanation"]?.ToString() ?? ""
+                )).ToList() ?? new List<(string, string, string)>(),
+                (root["suggestions"] as JArray)?.Select(x => x.ToString()).ToList() ?? new List<string>()
             );
         }
         catch
@@ -226,23 +221,22 @@ Respond in JSON format only (no markdown):
         try
         {
             var json = ExtractJson(response);
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
+            var root = JObject.Parse(json);
             return (
-                root.GetProperty("title").GetString() ?? "",
-                root.GetProperty("content").GetString() ?? "",
-                root.GetProperty("vocabulary").EnumerateArray().Select(x => (
-                    x.GetProperty("word").GetString() ?? "",
-                    x.GetProperty("meaning").GetString() ?? "",
-                    x.GetProperty("pronunciation").GetString() ?? "",
-                    x.GetProperty("example").GetString() ?? ""
-                )).ToList(),
-                root.GetProperty("questions").EnumerateArray().Select(x => (
-                    x.GetProperty("question").GetString() ?? "",
-                    x.GetProperty("options").EnumerateArray().Select(o => o.GetString() ?? "").ToList(),
-                    x.GetProperty("correctIndex").GetInt32(),
-                    x.TryGetProperty("explanation", out var exp) ? exp.GetString() ?? "" : ""
-                )).ToList()
+                root["title"]?.ToString() ?? "",
+                root["content"]?.ToString() ?? "",
+                (root["vocabulary"] as JArray)?.Select(x => (
+                    x["word"]?.ToString() ?? "",
+                    x["meaning"]?.ToString() ?? "",
+                    x["pronunciation"]?.ToString() ?? "",
+                    x["example"]?.ToString() ?? ""
+                )).ToList() ?? new List<(string, string, string, string)>(),
+                (root["questions"] as JArray)?.Select(x => (
+                    x["question"]?.ToString() ?? "",
+                    (x["options"] as JArray)?.Select(o => o.ToString()).ToList() ?? new List<string>(),
+                    x["correctIndex"]?.Value<int>() ?? 0,
+                    x["explanation"]?.ToString() ?? ""
+                )).ToList() ?? new List<(string, List<string>, int, string)>()
             );
         }
         catch
@@ -267,13 +261,13 @@ Respond in JSON format only (no markdown):
         try
         {
             var json = ExtractJson(response);
-            using var doc = JsonDocument.Parse(json);
-            return doc.RootElement.GetProperty("words").EnumerateArray().Select(x => (
-                x.GetProperty("word").GetString() ?? "",
-                x.GetProperty("meaning").GetString() ?? "",
-                x.GetProperty("pronunciation").GetString() ?? "",
-                x.GetProperty("example").GetString() ?? ""
-            )).ToList();
+            var root = JObject.Parse(json);
+            return (root["words"] as JArray)?.Select(x => (
+                x["word"]?.ToString() ?? "",
+                x["meaning"]?.ToString() ?? "",
+                x["pronunciation"]?.ToString() ?? "",
+                x["example"]?.ToString() ?? ""
+            )).ToList() ?? new List<(string, string, string, string)>();
         }
         catch
         {
@@ -362,13 +356,13 @@ Respond in JSON format only (no markdown):
         try
         {
             var json = ExtractJson(response);
-            using var doc = JsonDocument.Parse(json);
-            return doc.RootElement.GetProperty("words").EnumerateArray().Select(x => (
-                x.GetProperty("word").GetString() ?? "",
-                x.GetProperty("meaning").GetString() ?? "",
-                x.GetProperty("pronunciation").GetString() ?? "",
-                x.GetProperty("example").GetString() ?? ""
-            )).ToList();
+            var root = JObject.Parse(json);
+            return (root["words"] as JArray)?.Select(x => (
+                x["word"]?.ToString() ?? "",
+                x["meaning"]?.ToString() ?? "",
+                x["pronunciation"]?.ToString() ?? "",
+                x["example"]?.ToString() ?? ""
+            )).ToList() ?? items.Select(x => (x.word, x.meaning, "", "")).ToList();
         }
         catch (Exception ex)
         {
@@ -414,7 +408,7 @@ Respond in JSON format only (no markdown):
                 }
             };
 
-            var json = JsonSerializer.Serialize(requestBody);
+            var json = JsonConvert.SerializeObject(requestBody);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
             
             // Use Gemini Pro for audio (Pro supports multimodal)
@@ -424,13 +418,8 @@ Respond in JSON format only (no markdown):
 
             if (response.IsSuccessStatusCode)
             {
-                using var doc = JsonDocument.Parse(responseText);
-                var text = doc.RootElement
-                    .GetProperty("candidates")[0]
-                    .GetProperty("content")
-                    .GetProperty("parts")[0]
-                    .GetProperty("text")
-                    .GetString();
+                var doc = JObject.Parse(responseText);
+                var text = doc["candidates"]?[0]?["content"]?["parts"]?[0]?["text"]?.ToString();
 
                 return text?.Trim() ?? "";
             }
@@ -503,25 +492,10 @@ JSON Response format:
             _logger.LogInformation("Raw practice response length: {Length}", response.Length);
             
             var json = ExtractJson(response);
+            _logger.LogInformation("Extracted JSON length: {Length}", json.Length);
             
-            // Escape newlines inside JSON string values using regex
-            // Match content between quotes and escape any real newlines
-            json = System.Text.RegularExpressions.Regex.Replace(
-                json,
-                @"""([^""\\]*(?:\\.[^""\\]*)*)""",
-                m => {
-                    var content = m.Groups[1].Value
-                        .Replace("\r\n", "\\n")
-                        .Replace("\n", "\\n")
-                        .Replace("\r", "\\n")
-                        .Replace("\t", " ");
-                    return $"\"{content}\"";
-                });
-            
-            _logger.LogInformation("JSON ready for parsing, length: {Length}", json.Length);
-            
-            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            var result = JsonSerializer.Deserialize<LinguaAI.Common.Models.PracticeResponse>(json, options);
+            // Use Newtonsoft.Json for more lenient parsing
+            var result = Newtonsoft.Json.JsonConvert.DeserializeObject<LinguaAI.Common.Models.PracticeResponse>(json);
             return result ?? new LinguaAI.Common.Models.PracticeResponse();
         }
         catch (Exception ex)
