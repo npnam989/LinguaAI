@@ -460,8 +460,11 @@ Requirements based on Type:
 2. arrange: Provide a complete {langName} sentence. The 'Options' list contains the sentence words in SHUFFLED order. CorrectAnswer is the correctly ordered sentence.
 
 3. translate: 
-   - Create a VIETNAMESE sentence that naturally uses one of the vocabulary words (use its Vietnamese meaning in context)
-   - Add a brief context/situation description before the sentence (e.g., ""[Tại nhà hàng]"", ""[Nói chuyện với bạn]"")
+   - The question field MUST contain TWO parts:
+     Part 1: Brief context in brackets (e.g., ""[Tại nhà hàng]"", ""[Nói chuyện với bạn]"")
+     Part 2: A complete VIETNAMESE sentence to translate (REQUIRED! This is the sentence the user will translate)
+   - Example question format: ""[Tại nhà hàng] Tôi muốn gọi một ly cà phê.""
+   - The Vietnamese sentence naturally uses one of the vocabulary words (use its Vietnamese meaning in context)
    - DO NOT hint or reveal which vocabulary word is being used
    - CorrectAnswer is the {langName} translation
    - Sentence complexity must match the level (Elementary=simple, Intermediate=moderate, Advanced=complex)
@@ -477,7 +480,7 @@ JSON Response format:
 {{
     ""exercises"": [
         {{
-            ""question"": ""<Context if translate type> <The question text>"",
+            ""question"": ""<[Context] Vietnamese sentence to translate>"",
             ""correctAnswer"": ""<The correct answer>"",
             ""options"": [""<option1>"", ""...""],
             ""explanation"": ""<Detailed bilingual explanation>"",
