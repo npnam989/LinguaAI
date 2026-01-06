@@ -284,7 +284,8 @@ public class ApiService : IApiService
             content.Add(fileContent, "audio", $"recording{extension}");
             content.Add(new StringContent(language), "language");
             
-            // Send directly to API
+            // Send directly to API with auth
+            AddAuthHeader();
             var apiUrl = _config["ApiSettings:BaseUrl"]?.TrimEnd('/') + "/api/speech/transcribe";
             _logger.LogInformation("Sending to API: {Url}", apiUrl);
             
