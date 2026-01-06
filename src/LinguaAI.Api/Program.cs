@@ -31,6 +31,7 @@ public class Program
         builder.Services.AddSingleton<IGeminiService, GeminiService>();
         builder.Services.AddSingleton<IFileParserService, FileParserService>();
         builder.Services.AddSingleton<ITimeBasedAuthService, TimeBasedAuthService>();
+        builder.Services.AddSingleton<MongoService>(); // Register MongoService
 
         // Rate Limiting - protect against abuse
         builder.Services.AddRateLimiter(options =>

@@ -35,9 +35,15 @@ public class GeminiService : IGeminiService
         { "zh", "Chinese (Mandarin)" }
     };
 
-    public GeminiService(IConfiguration config, ILogger<GeminiService> logger)
+    private readonly HttpClient _httpClient;
+    private readonly ILogger<GeminiService> _logger;
+    private readonly string _apiKey;
+    private readonly MongoService _mongoService;
+
+    public GeminiService(IConfiguration config, ILogger<GeminiService> logger, MongoService mongoService)
     {
         _logger = logger;
+        _mongoService = mongoService;
         _apiKey = config["Gemini:ApiKey"] ?? "";
         
         if (string.IsNullOrEmpty(_apiKey))
@@ -48,8 +54,11 @@ public class GeminiService : IGeminiService
         _httpClient = new HttpClient();
     }
 
-    private async Task<string> CallGeminiAsync(string prompt)
+    private async Task<string> CallGeminiAsync(string prompt, string requestType = "General")
     {
+        // Log the request
+        await _mongoService.LogAIResponseAsync("anonymous", prompt, "Processing...", requestType);
+
         var requestBody = new
         {
             contents = new[]
