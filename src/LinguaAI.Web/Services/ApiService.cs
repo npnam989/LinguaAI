@@ -280,7 +280,6 @@ public class ApiService : IApiService
             _logger.LogError(ex, "Error transcribing audio");
             return "";
         }
-            }
     }
 
     public async Task<PracticeResponse?> GeneratePracticeExercisesAsync(PracticeRequest request)
@@ -295,7 +294,6 @@ public class ApiService : IApiService
             return null;
         }
     }
-}
 }
 
 public class TranscribeResponse 

@@ -167,7 +167,6 @@ public class PracticeController : Controller
         {
             return StatusCode(500, new { error = "Transcription failed: " + ex.Message });
         }
-        }
     }
 
     [HttpPost]

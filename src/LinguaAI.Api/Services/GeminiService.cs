@@ -443,7 +443,6 @@ Respond in JSON format only (no markdown):
             _logger.LogError(ex, "Error transcribing audio");
             return "";
         }
-            }
     }
 
     public async Task<LinguaAI.Common.Models.PracticeResponse> GeneratePracticeExercisesAsync(LinguaAI.Common.Models.PracticeRequest request)
@@ -493,5 +492,4 @@ Respond in JSON format only:
             return new LinguaAI.Common.Models.PracticeResponse();
         }
     }
-}
 }
