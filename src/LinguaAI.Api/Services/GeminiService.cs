@@ -458,7 +458,12 @@ LEVEL COMPLEXITY GUIDELINES:
 Requirements based on Type:
 1. fill_blank: Provide a {langName} sentence with ONE vocabulary word replaced by '_____'. CorrectAnswer is the missing word. Options should include the correct word and 3 similar distractors.
 
-2. arrange: Provide a complete {langName} sentence. The 'Options' list contains the sentence words in SHUFFLED order. CorrectAnswer is the correctly ordered sentence.
+2. arrange: 
+   - Provide a complete {langName} sentence using the vocabulary.
+   - The 'Options' list MUST contain ALL individual words from the sentence.
+   - The words in 'Options' MUST be shuffled randomly.
+   - CRITICAL: Ensure NO words are missing from the 'Options' list.
+   - CorrectAnswer is the correctly ordered sentence.
 
 3. translate: 
    - The question field MUST contain TWO parts:
@@ -483,7 +488,7 @@ JSON Response format:
         {{
             ""question"": ""<[Context] Vietnamese sentence to translate>"",
             ""correctAnswer"": ""<The correct answer>"",
-            ""options"": [""<option1>"", ""...""],
+            ""options"": [""<option1>"", ""<option2>"", ""... (MUST be populated for fill_blank and arrange)"", ""...""],
             ""explanation"": ""<Detailed bilingual explanation>"",
             ""explanationVi"": ""<Vietnamese explanation only>""
         }}
