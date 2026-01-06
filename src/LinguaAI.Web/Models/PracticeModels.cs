@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace LinguaAI.Common.Models;
+namespace LinguaAI.Web.Models;
 
 public class PracticeRequest
 {

@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using LinguaAI.Common.Models;
+using LinguaAI.Web.Models;
 
 namespace LinguaAI.Web.Services;
 
@@ -272,7 +274,7 @@ public class ApiService : IApiService
             content.Add(new StringContent(language), "language");
             
             // Send directly to API
-            var apiUrl = _options.BaseUrl.TrimEnd('/') + "/api/speech/transcribe";
+            var apiUrl = _config["ApiSettings:BaseUrl"]?.TrimEnd('/') + "/api/speech/transcribe";
             var response = await _httpClient.PostAsync(apiUrl, content);
             
             if (response.IsSuccessStatusCode)

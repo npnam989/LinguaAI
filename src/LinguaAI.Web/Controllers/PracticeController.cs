@@ -1,4 +1,5 @@
 using LinguaAI.Common.Models;
+using LinguaAI.Web.Models;
 using LinguaAI.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 
