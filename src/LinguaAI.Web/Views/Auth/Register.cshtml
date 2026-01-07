@@ -1,0 +1,58 @@
+@model LinguaAI.Common.Models.RegisterRequest
+@{
+    ViewData["Title"] = "Register";
+}
+
+<div class="container" style="max-width: 400px; margin-top: 50px;">
+    <h2>Register</h2>
+    <form asp-action="Register" method="post" id="registerForm" onsubmit="return validatePassword()">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        
+        <div class="form-group mb-3">
+            <label class="form-label">Username</label>
+            <input asp-for="Username" class="form-control" required />
+        </div>
+
+        <div class="form-group mb-3">
+            <label class="form-label">Email</label>
+            <input asp-for="Email" type="email" class="form-control" required />
+        </div>
+        
+        <div class="form-group mb-3">
+            <label class="form-label">Password</label>
+            <input asp-for="Password" type="password" class="form-control" id="password" required />
+            <small class="text-muted">Must be at least 8 characters, include a number and a special character.</small>
+        </div>
+
+        <div class="form-group mb-3">
+            <label class="form-label">Confirm Password</label>
+            <input type="password" class="form-control" id="confirmPassword" required />
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">Register</button>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+function validatePassword() {
+    var password = document.getElementById("password").value;
+    var confirm = document.getElementById("confirmPassword").value;
+    
+    if (password !== confirm) {
+        alert("Passwords do not match!");
+        return false;
+    }
+    
+    // Strong password: 8+ chars, at least one number, one special char
+    // Allowed special chars expanded or just use negated set logic
+    var regex = /^(?=.*[0-9])(?=.*[\W_]).{8,}$/;
+    if (!regex.test(password)) {
+        alert("Password must be at least 8 characters long and include a number and a special character.");
+        return false;
+    }
+    
+    return true;
+}
+</script>
+}

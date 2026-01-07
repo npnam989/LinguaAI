@@ -96,7 +96,7 @@ public class GeminiService : IGeminiService
             }
 
             _logger.LogError("Gemini API error: {Response}", responseText);
-            throw new Exception($"Gemini API error: {response.StatusCode}. Vui lòng thử lại sau ít phút.");
+            throw new Exception($"Gemini API error: {response.StatusCode} - {responseText}");
         }
 
         throw new Exception("Không thể kết nối Gemini API sau nhiều lần thử.");

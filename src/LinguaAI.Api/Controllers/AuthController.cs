@@ -31,7 +31,7 @@ public class AuthController : ControllerBase
         var user = new User
         {
             Username = request.Username,
-            PasswordHash = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(request.Password)), // Insecure but simple for now
+            PasswordHash = HashPassword(request.Password),
             Email = request.Email
         };
 
@@ -45,7 +45,7 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var passwordHash = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(request.Password));
+        var passwordHash = HashPassword(request.Password);
         var user = await _mongoService.Users.Find(u => u.Username == request.Username && u.PasswordHash == passwordHash).FirstOrDefaultAsync();
 
         if (user == null)
@@ -53,5 +53,16 @@ public class AuthController : ControllerBase
 
         // In a real app, generate JWT here
         return Ok(new { Token = "dummy_token_" + user.Id, UserId = user.Id, Username = user.Username });
+    }
+
+    private string HashPassword(string password)
+    {
+        if (string.IsNullOrEmpty(password)) return "";
+        using (var sha256 = System.Security.Cryptography.SHA256.Create())
+        {
+            var bytes = System.Text.Encoding.UTF8.GetBytes(password);
+            var hash = sha256.ComputeHash(bytes);
+            return Convert.ToBase64String(hash);
+        }
     }
 }

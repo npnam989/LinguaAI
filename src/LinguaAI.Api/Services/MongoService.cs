@@ -28,6 +28,18 @@ public class MongoService
         try
         {
              connectionString = DecryptString(encryptionKey, encryptedConnectionString);
+             
+             // Use MongoUrlBuilder to safely manage connection string parameters
+             var mongoUrlBuilder = new MongoUrlBuilder(connectionString);
+             if (string.IsNullOrEmpty(mongoUrlBuilder.AuthenticationSource))
+             {
+                 mongoUrlBuilder.AuthenticationSource = "admin";
+             }
+             connectionString = mongoUrlBuilder.ToString();
+
+             // Debug log to verify string (mask password)
+            //  var masked = System.Text.RegularExpressions.Regex.Replace(connectionString, "(:)([^@]+)(@)", "$1***$3");
+             _logger.LogInformation("Decrypted Connection String: {Masked}", connectionString);
         }
         catch (Exception ex)
         {
@@ -38,6 +50,21 @@ public class MongoService
         var client = new MongoClient(connectionString);
         _database = client.GetDatabase("lingua_ai_db");
         _logger.LogInformation("Connected to MongoDB");
+        
+        // Helper to log public IP for Whitelisting
+        Task.Run(async () => {
+            try {
+                using var httpClient = new HttpClient();
+                httpClient.Timeout = TimeSpan.FromSeconds(5);
+                var ip = await httpClient.GetStringAsync("https://api.ipify.org");
+                _logger.LogWarning("=================================================");
+                _logger.LogWarning("CURRENT PUBLIC IP: {IP}", ip);
+                _logger.LogWarning("Add this IP to MongoDB Atlas -> Network Access");
+                _logger.LogWarning("=================================================");
+            } catch (Exception ex) {
+                _logger.LogError("Could not fetch Public IP: {Message}", ex.Message);
+            }
+        });
     }
 
     private string DecryptString(string key, string cipherText)

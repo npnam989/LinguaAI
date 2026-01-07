@@ -19,6 +19,10 @@ public interface IApiService
     Task<string> TranscribeAudioAsync(byte[] audioData, string language, string mimeType = "audio/webm");
     Task<PracticeResponse?> GeneratePracticeExercisesAsync(PracticeRequest request);
     Task<TranslationCheckResponse?> CheckTranslationAsync(TranslationCheckRequest request);
+    Task<string?> LoginAsync(LoginRequest request);
+    Task<bool> RegisterAsync(RegisterRequest request);
+    Task<List<UserActionLog>?> GetActionLogsAsync(string userId);
+    Task<List<AIResponseLog>?> GetAILogsAsync(string userId);
 }
 
 public class ApiService : IApiService
@@ -196,14 +200,60 @@ public class ApiService : IApiService
         }
     }
 
-    private async Task<T?> SendWithAuthAsync<T>(HttpMethod method, string endpoint, object? body = null)
+    public async Task<string?> LoginAsync(LoginRequest request)
+    {
+        try
+        {
+            AddAuthHeader();
+            var response = await _httpClient.PostAsJsonAsync("/api/auth/login", request);
+            if (response.IsSuccessStatusCode)
+            {
+               var result = await response.Content.ReadFromJsonAsync<dynamic>();
+               // Return Token/UserId/Username JSON string or object
+               return result?.ToString();
+            }
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Login failed");
+            return null;
+        }
+    }
+
+    public async Task<bool> RegisterAsync(RegisterRequest request)
+    {
+        try
+        {
+            AddAuthHeader();
+            var response = await _httpClient.PostAsJsonAsync("/api/auth/register", request);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Register failed");
+            return false;
+        }
+    }
+
+    public async Task<List<UserActionLog>?> GetActionLogsAsync(string userId)
+    {
+        return await SendWithAuthAsync<List<UserActionLog>>(HttpMethod.Get, $"/api/history/action-logs?userId={userId}");
+    }
+
+    public async Task<List<AIResponseLog>?> GetAILogsAsync(string userId)
+    {
+        return await SendWithAuthAsync<List<AIResponseLog>>(HttpMethod.Get, $"/api/history/ai-logs?userId={userId}");
+    }
+
+    private async Task<T?> SendWithAuthAsync<T>(HttpMethod method, string endpoint, object? data = null)
     {
         AddAuthHeader();
         
         HttpResponseMessage response;
-        if (method == HttpMethod.Post && body != null)
+        if (method == HttpMethod.Post)
         {
-            response = await _httpClient.PostAsJsonAsync(endpoint, body);
+            response = await _httpClient.PostAsJsonAsync(endpoint, data);
         }
         else if (method == HttpMethod.Get)
         {

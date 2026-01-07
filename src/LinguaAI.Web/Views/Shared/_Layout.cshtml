@@ -24,8 +24,22 @@
                 <li><a asp-controller="Home" asp-action="Dashboard">Dashboard</a></li>
                 <li><a asp-controller="Practice" asp-action="Conversation">Hội thoại</a></li>
                 <li><a asp-controller="Practice" asp-action="Vocabulary">Từ vựng</a></li>
+                <li><a asp-controller="Practice" asp-action="Conversation">Hội thoại</a></li>
+                <li><a asp-controller="Practice" asp-action="Vocabulary">Từ vựng</a></li>
             </ul>
-        </div>
+             <ul class="navbar-nav ms-auto">
+                @if (!string.IsNullOrEmpty(Context.Session.GetString("UserId")))
+                {
+                     <li><a asp-controller="History" asp-action="Index">Lịch sử</a></li>
+                     <li><span class="navbar-text me-2">Hi, @Context.Session.GetString("Username")</span></li>
+                     <li><a asp-controller="Auth" asp-action="Logout">Logout</a></li>
+                }
+                else
+                {
+                     <li><a asp-controller="Auth" asp-action="Login">Login</a></li>
+                     <li><a asp-controller="Auth" asp-action="Register">Register</a></li>
+                }
+            </ul>
     </nav>
 
     <!-- Main Content -->
