@@ -254,7 +254,7 @@ Respond in JSON format only (no markdown):
 Respond in JSON format only (no markdown):
 {{
     ""words"": [
-        {{""word"": ""<word in {langName}>"", ""meaning"": ""<Vietnamese meaning>"", ""pronunciation"": ""<romanization>"", ""example"": ""<example sentence>""}}
+        {{""word"": ""<word in {langName}>"", ""meaning"": ""<Vietnamese meaning>"", ""pronunciation"": ""<romanization>"", ""example"": ""<example sentence in {langName} (Vietnamese translation)>""}}
     ]
 }}";
 
@@ -341,7 +341,7 @@ For such entries, please format the output as follows:
 - Word: Keep the original input string (e.g. 'A / B')
 - Pronunciation: Provide IPA for ALL synonyms, separated by ' - ' (e.g. '/ipa A/ - /ipa B/')
 - Meaning: Format meanings in parentheses if possible or keep original.
-- Example: Provide a short example for EACH synonym, formatted like: 'Word A: Example A (Meaning A) / Word B: Example B (Meaning B)'.
+- Example: Provide a short example sentence for EACH synonym in the target language, followed by its Vietnamese translation in parentheses. Format: 'Word A: Example sentence A (Vietnamese translation) / Word B: Example sentence B (Vietnamese translation)'.
 
 Input:
 {itemsList}
@@ -349,7 +349,7 @@ Input:
 Respond in JSON format only (no markdown):
 {{
     ""words"": [
-        {{""word"": ""<original word>"", ""meaning"": ""<original meaning>"", ""pronunciation"": ""<IPA>"", ""example"": ""<example sentence>""}}
+        {{""word"": ""<original word>"", ""meaning"": ""<original meaning>"", ""pronunciation"": ""<IPA>"", ""example"": ""<example sentence in target language (Vietnamese translation)>""}}
     ]
 }}";
 
