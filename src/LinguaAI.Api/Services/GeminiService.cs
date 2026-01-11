@@ -450,47 +450,63 @@ Respond in JSON format only (no markdown):
 Type: {typeDesc} (Internal Type: {request.Type})
 Vocabulary pool to integrate: {string.Join(", ", request.Words)}
 
+⚠️ **STRICT REQUIREMENTS - MUST FOLLOW:**
+1. Generate EXACTLY {request.Count} exercises (one exercise per vocabulary word provided)
+2. Each vocabulary word from the pool MUST be used in EXACTLY ONE exercise
+3. The number of exercises in the output MUST equal {request.Count}
+4. DO NOT skip any words, DO NOT reuse words, DO NOT generate fewer exercises than requested
+
 LEVEL COMPLEXITY GUIDELINES:
 - Elementary (Sơ cấp): Simple sentences, basic grammar, everyday situations (greeting, shopping, weather)
 - Intermediate (Trung cấp): Compound sentences, varied grammar patterns, social contexts (work, travel, relationships)
 - Advanced (Cao cấp): Complex sentences, formal/informal registers, abstract topics (opinions, culture, philosophy)
 
 Requirements based on Type:
-1. fill_blank: Provide a {langName} sentence with ONE vocabulary word replaced by '_____'. CorrectAnswer is the missing word. Options should include the correct word and 3 similar distractors.
 
-2. arrange: 
-   - Provide a complete {langName} sentence using the vocabulary.
-   - The 'Options' list MUST contain ALL individual words from the sentence.
-   - The words in 'Options' MUST be shuffled randomly.
-   - CRITICAL: Ensure NO words are missing from the 'Options' list.
-   - CorrectAnswer is the correctly ordered sentence.
+1. fill_blank (Điền vào chỗ trống):
+   - Create a {langName} sentence using ONE vocabulary word from the pool
+   - Replace that vocabulary word with '_____' in the question
+   - CorrectAnswer: The missing vocabulary word
+   - Options: Array containing the correct word AND 3 similar distractors (total 4 options)
+   - All fields (question, correctAnswer, options, explanation) MUST be complete and non-empty
 
-3. translate: 
-   - The question field MUST contain TWO parts:
-     Part 1: Brief context in brackets (e.g., ""[Tại nhà hàng]"", ""[Nói chuyện với bạn]"")
-     Part 2: A complete VIETNAMESE sentence to translate (REQUIRED! This is the sentence the user will translate)
-   - Example question format: ""[Tại nhà hàng] Tôi muốn gọi một ly cà phê.""
-   - The Vietnamese sentence naturally uses one of the vocabulary words (use its Vietnamese meaning in context)
-   - DO NOT hint or reveal which vocabulary word is being used
-   - CorrectAnswer is the {langName} translation
-   - Sentence complexity must match the level (Elementary=simple, Intermediate=moderate, Advanced=complex)
-   - 'Options' is empty
+2. arrange (Sắp xếp câu): 
+   - Create a complete, grammatically correct {langName} sentence using ONE vocabulary word from the pool
+   - CorrectAnswer: The complete sentence in correct order
+   - Options: Array containing ALL individual words from the sentence, shuffled randomly
+   - **CRITICAL:** Count the words in your sentence, then ensure Options array has EXACTLY that many words
+   - **CRITICAL:** Every word in the sentence MUST appear in Options, no words missing
+   - Verify: Options.length should equal the word count of CorrectAnswer
+   - Example: If sentence is ""나는 학교에 갑니다"" (4 words), Options MUST have exactly 4 elements: [""갑니다"", ""학교에"", ""나는"", """"] (shuffled)
+
+3. translate (Biên dịch): 
+   - Question field format: ""[Context in Vietnamese] Complete Vietnamese sentence""
+   - Example: ""[Tại nhà hàng] Tôi muốn gọi một ly cà phê.""
+   - Context examples: [Tại cửa hàng], [Nói chuyện với bạn], [Ở trường học], [Trong công việc]
+   - The Vietnamese sentence MUST naturally incorporate the meaning of ONE vocabulary word (but don't reveal which)
+   - CorrectAnswer: The {langName} translation of the Vietnamese sentence
+   - Options: Empty array []
+   - Sentence complexity MUST match the level (Elementary=5-8 words, Intermediate=8-12 words, Advanced=12+ words)
    - Explanation MUST include:
-     * Word-by-word breakdown
-     * Grammar structure explanation
-     * Alternative acceptable translations
+     * Word-by-word breakdown of the translation
+     * Grammar structure explanation in Vietnamese
+     * 2-3 alternative acceptable translations
 
-IMPORTANT: All explanations must be bilingual ({langName} + Vietnamese).
+IMPORTANT: 
+- All explanations must be bilingual ({langName} + Vietnamese)
+- Ensure ALL required fields are populated (no empty strings except where specified)
+- Double-check that exercises.length === {request.Count}
 
-JSON Response format:
+JSON Response format (PLAIN JSON, NO MARKDOWN):
 {{
     ""exercises"": [
         {{
-            ""question"": ""<[Context] Vietnamese sentence to translate>"",
-            ""correctAnswer"": ""<The correct answer>"",
-            ""options"": [""<option1>"", ""<option2>"", ""... (MUST be populated for fill_blank and arrange)"", ""...""],
-            ""explanation"": ""<Detailed bilingual explanation>"",
-            ""explanationVi"": ""<Vietnamese explanation only>""
+            ""question"": ""<question text>"",
+            ""correctAnswer"": ""<correct answer>"",
+            ""options"": [""<opt1>"", ""<opt2>"", ""...""],
+            ""explanation"": ""<bilingual explanation>"",
+            ""explanationVi"": ""<Vietnamese explanation>"",
+            ""targetWord"": ""<the vocabulary word used in this exercise>""
         }}
     ]
 }}";
@@ -519,6 +535,28 @@ JSON Response format:
 
             // Use Newtonsoft.Json for more lenient parsing
             var result = Newtonsoft.Json.JsonConvert.DeserializeObject<LinguaAI.Common.Models.PracticeResponse>(json);
+            
+            // Validation: Ensure we got the expected count
+            if (result != null && result.Exercises != null)
+            {
+                if (result.Exercises.Count != request.Count)
+                {
+                    _logger.LogWarning("Exercise count mismatch! Requested: {Requested}, Generated: {Generated}. Words: {Words}", 
+                        request.Count, result.Exercises.Count, string.Join(", ", request.Words));
+                }
+                
+                // Additional validation: Check for empty required fields
+                for (int i = 0; i < result.Exercises.Count; i++)
+                {
+                    var ex = result.Exercises[i];
+                    if (string.IsNullOrEmpty(ex.Question) || string.IsNullOrEmpty(ex.CorrectAnswer))
+                    {
+                        _logger.LogWarning("Exercise {Index} has empty required fields. Question empty: {QEmpty}, Answer empty: {AEmpty}",
+                            i, string.IsNullOrEmpty(ex.Question), string.IsNullOrEmpty(ex.CorrectAnswer));
+                    }
+                }
+            }
+            
             return result ?? new LinguaAI.Common.Models.PracticeResponse();
         }
         catch (Exception ex)
