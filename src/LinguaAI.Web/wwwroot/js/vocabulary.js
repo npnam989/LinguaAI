@@ -10,6 +10,8 @@ let practiceIndex = 0;
 let practiceScore = 0;
 let currentPracticeType = 'fill_blank';
 let originalArrangeSource = []; // For resetting arrange exercise
+let practiceWordsQueue = []; // Queue of words to generate questions for
+let isFetchingPractice = false; // Flag to prevent concurrent fetches if needed (though we want background)
 
 // Quiz state
 
@@ -848,28 +850,25 @@ async function startPractice() {
     document.getElementById('practiceQuiz').classList.add('hidden');
     document.getElementById('practiceSummary').classList.add('hidden');
 
+    // Initialize State
+    practiceExercises = [];
+    practiceIndex = 0;
+    practiceScore = 0;
+    currentPracticeType = type;
+
+    // Create queue from vocabulary list
+    // Shuffle words for randomness if desired, or keep order
+    practiceWordsQueue = [...vocabularyList];
+
+    // Optional: Shuffle queue
+    for (let i = practiceWordsQueue.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [practiceWordsQueue[i], practiceWordsQueue[j]] = [practiceWordsQueue[j], practiceWordsQueue[i]];
+    }
+
     try {
-        const wordList = vocabularyList.map(v => v.word);
-
-        const response = await fetch('/Practice/GeneratePractice', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                words: wordList,
-                language: language,
-                level: level,
-                type: type,
-                count: 5
-            })
-        });
-
-        if (!response.ok) throw new Error('Failed to generate practice');
-
-        const data = await response.json();
-        practiceExercises = data.exercises || [];
-        practiceIndex = 0;
-        practiceScore = 0;
-        currentPracticeType = type;
+        // Initial load: 2 questions
+        await fetchPracticeBatch(2, language, level, type);
 
         if (practiceExercises.length === 0) {
             alert("Không thể tạo bài tập. Vui lòng thử lại.");
@@ -880,24 +879,93 @@ async function startPractice() {
         }
 
     } catch (error) {
-        console.error('Practice generation error:', error);
+        console.error('Practice start error:', error);
         alert('Lỗi tạo bài tập.');
         resetPractice();
     }
 }
 
+async function fetchPracticeBatch(count, language, level, type) {
+    if (practiceWordsQueue.length === 0) return;
+
+    isFetchingPractice = true;
+
+    // Take batch from queue
+    const batch = practiceWordsQueue.slice(0, count);
+    const wordStrings = batch.map(v => v.word);
+
+    try {
+        const response = await fetch('/Practice/GeneratePractice', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                words: wordStrings,
+                language: language,
+                level: level,
+                type: type,
+                count: batch.length // Request exactly for these words
+            })
+        });
+
+        if (!response.ok) throw new Error('Failed to generate practice');
+
+        const data = await response.json();
+
+        if (data.exercises && data.exercises.length > 0) {
+            // Remove processed words from queue
+            practiceWordsQueue.splice(0, count);
+
+            // Add to exercises
+            practiceExercises.push(...data.exercises);
+
+            // Should we update UI if we are waiting?
+            // If the user is staring at a loading screen (caught by showPracticeQuestion), 
+            // we should re-trigger showPracticeQuestion
+            const loadingEl = document.getElementById('practiceLoading');
+            if (!loadingEl.classList.contains('hidden') && document.getElementById('practiceQuiz').classList.contains('hidden')) {
+                // We were waiting for data
+                loadingEl.classList.add('hidden');
+                showPracticeQuestion();
+            }
+        }
+
+    } catch (err) {
+        console.warn('Background fetch failed:', err);
+        // Don't remove from queue so we can retry? Or just skip? 
+        // For now, if it fails, maybe we just don't get those questions.
+        // But better to leave them in queue or retry logic.
+        // We won't remove them from queue if we errored before splice.
+    } finally {
+        isFetchingPractice = false;
+    }
+}
+
 function showPracticeQuestion() {
+    // Check if we have data for current index
     if (practiceIndex >= practiceExercises.length) {
-        showPracticeSummary();
+        // If we are out of exercises
+        if (practiceWordsQueue.length === 0 && !isFetchingPractice) {
+            // No more words and no pending fetch -> Done
+            showPracticeSummary();
+            return;
+        }
+
+        // If we have words left or are fetching, show loading
+        document.getElementById('practiceQuiz').classList.add('hidden');
+        document.getElementById('practiceLoading').classList.remove('hidden');
+        // The fetch callback will trigger this function again when data arrives
         return;
     }
 
     const exercise = practiceExercises[practiceIndex];
+    document.getElementById('practiceLoading').classList.add('hidden'); // Ensure loading is hidden
     document.getElementById('practiceQuiz').classList.remove('hidden');
     document.getElementById('practiceSettings').classList.add('hidden');
 
     document.getElementById('practiceCurrentIndex').textContent = practiceIndex + 1;
-    document.getElementById('practiceTotalCount').textContent = practiceExercises.length;
+    // Estimated total is current length + remaining queue
+    document.getElementById('practiceTotalCount').textContent = practiceExercises.length + practiceWordsQueue.length;
+
     document.getElementById('practiceScore').textContent = practiceScore;
     document.getElementById('practiceQuestion').textContent = exercise.question;
 
@@ -1147,6 +1215,21 @@ function nextPracticeQuestion() {
     practiceIndex++;
     selectedOptionBtn = null;
     selectedAnswer = '';
+
+    // TRIGGER BACKGROUND FETCH
+    // Always try to maintain a buffer. If we have 2 words left in queue, fetch them.
+    // Fetch next 1 word.
+    const level = document.getElementById('practiceLevel').value;
+    const type = document.getElementById('practiceType').value;
+    const language = document.getElementById('languageSelect').value;
+
+    // Use timeout to make it truly async background and not block UI thread? 
+    // fetchPracticeBatch is async so it returns a promise, which we just ignore here.
+    // Ensure we don't fetch if already fetching
+    if (!isFetchingPractice && practiceWordsQueue.length > 0) {
+        fetchPracticeBatch(1, language, level, type);
+    }
+
     showPracticeQuestion();
 }
 
